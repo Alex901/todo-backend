@@ -7,10 +7,11 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   try {
     // Extract data from the request body
-    const { task, isDone, created, completed } = req.body;
+    const { id, task, isDone, created, completed } = req.body;
 
     // Create a new todo entry
     const todo = new Todo({
+      id, 
       task,
       isDone,
       created,

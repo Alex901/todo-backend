@@ -5,15 +5,27 @@ const userRoutes = require('./routes/user');
 const entriesRountes = require('./routes/entry');
 const Todo = require('./models/Todo');
 const mongoose = require('mongoose');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowOrigins = [
+    'https://tod0ify-app.netlify.app',
+    'http://localhost:5173'
+]
 
 // Connect to MongoDB
 connectDB();
 
 // Parse JSON request body
 app.use(express.json());
+app.use(cors({
+    origin: allowOrigins
+}));
+
+app.get('/', (req, res) => {
+    res.send("server is running");
+});
 
 app.use('/api', entriesRountes);
 
