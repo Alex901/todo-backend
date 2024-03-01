@@ -23,6 +23,14 @@ app.use(cors({
     origin: allowOrigins
 }));
 
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://main--tod0ify-app.netlify.app');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    next();
+  });
+
 app.get('/', (req, res) => {
     res.send("server is running");
 });
