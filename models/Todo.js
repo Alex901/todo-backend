@@ -19,6 +19,13 @@ const todoSchema = new mongoose.Schema({
     },
     completed: {
         type: Date
+    },
+    isStarted: {
+        type: Boolean,
+        required: true
+    },
+    started: {
+        type: Date
     }
 }, {
     collection: 'Offline-entries' 

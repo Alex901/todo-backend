@@ -1,5 +1,6 @@
 const express = require('express');
 const Todo = require('../models/Todo'); 
+const logger = require('../middlewares/logger');
 
 const router = express.Router();
 
@@ -7,7 +8,9 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   try {
     // Extract data from the request body
-    const { id, task, isDone, created, completed } = req.body;
+    const { id, task, isDone, created, completed, isStarted, started } = req.body;
+
+    console.log("Req body before adding to database", req.body);
 
     // Create a new todo entry
     const todo = new Todo({
@@ -15,15 +18,28 @@ router.post('/', async (req, res) => {
       task,
       isDone,
       created,
-      completed
+      completed,
+      isStarted,
+      started
     });
 
+    console.log("Req body before adding to database", req.body);
+    console.log("Todo before adding to db: ", todo);
     // Save the todo entry to the database
-    await todo.save();
+    await todo.save(); //Error happens here 
+
+    console.log("Todo after adding to db: ", todo);
 
     res.status(201).json({ message: 'Todo entry created successfully', todo });
   } catch (error) {
-    console.error('Error storing todo entry:', error);
+    const errorMessage = error.message;
+    const stackTrace = error.stack;
+
+    logger.error({
+      level: 'error',
+      message: 'Error storing todo entry: ' + errorMessage,
+      stackTrace: stackTrace
+    });
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -32,6 +48,8 @@ router.post('/', async (req, res) => {
 router.get('/todos', async (req, res) => {
     try {
         const entries = await Todo.find();
+
+        await updateData(entries); //remember this one
 
         res.json(entries);
     } catch(error) {
@@ -75,5 +93,41 @@ router.delete('/delete/:taskId', async(req, res) => {
     return res.status(500).json({ message: 'Internal server error'})
   }
 })
+
+router.patch('/start', async (req, res) => {
+  try {
+    const { taskId } = req.body;
+
+    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
+      isStarted: true,
+      started: new Date()
+    }, { new: true });
+
+    if (!updatedTodo) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.status(200).json({ message: 'Task marked as started successfully' });
+  } catch (error) {
+    console.error('Error setting task as started:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+//Helper to update data when needed
+const updateData = async (entries) => {
+  try {
+    for (let entry of entries) {
+      if (!entry.isStarted || !entry.started) {
+        await Todo.findByIdAndUpdate(entry._id, { $set: { isStarted: false, started: null } });
+        entry.isStarted = false;
+        entry.started = null;
+      }
+    }
+  } catch (error) {
+    console.error('Error updating data:', error);
+    throw error; // Re-throw the error to handle it in the calling function
+  }
+};
 
 module.exports = router;
