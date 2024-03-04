@@ -125,30 +125,25 @@ const updateData = async (entries) => {
     }
   } catch (error) {
     console.error('Error updating data:', error);
-    throw error; // Re-throw the error to handle it in the calling function
+    throw error; 
   }
 };
 
 router.patch('/start', async (req, res) => {
   try {
-    // Extract taskId from the request body
     const { taskId } = req.body;
 
-    // Update the task in the database
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: true, // Mark the task as started
-      started: new Date() // Set the started timestamp
-    }, { new: true }); // Return the updated document
+      isStarted: true, 
+      started: new Date() 
+    }, { new: true }); 
 
-    // Check if the task was found and updated successfully
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Send a success response
     res.status(200).json({ message: 'Task marked as started successfully' });
   } catch (error) {
-    // Handle errors
     console.error('Error setting task as started:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
@@ -161,20 +156,34 @@ router.patch('/cancel', async (req, res) => {
     console.log("Start: Cancel task: taskId", taskId);
     // Update the task in the database
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: false, // Mark the task as not started
-      started: null // Reset the started timestamp
-    }, { new: true }); // Return the updated document
+      isStarted: false, 
+      started: null 
+    }, { new: true }); 
 
-    // Check if the task was found and updated successfully
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Send a success response
     res.status(200).json({ message: 'Task canceled successfully' });
   } catch (error) {
-    // Handle errors
     console.error('Error canceling task:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.patch('/edit', async (req, res) => {
+  try {
+    const { taskId, updatedTask } = req.body;
+
+    const updatedTodo = await Todo.findByIdAndUpdate(taskId, updatedTask, { new: true });
+
+    if (!updatedTodo) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.status(200).json({ message: 'Task updated successfully', updatedTodo });
+  } catch (error) {
+    console.error('Error updating task:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
