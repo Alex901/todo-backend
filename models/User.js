@@ -21,9 +21,28 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['user', 'admin'],
       default: 'user'
+    },
+    listNames: {
+      type: [String],
+      default: function () {
+        // Access the username using this.username
+        return [`${this.username}'s list`, 'defaultList', 'dailyList'];
+      },
+      validate: {
+        validator: function (arr) {
+          // Define your default strings here
+          const defaultValues = ['defaultList', 'dailyList'];
+          return arr.every(value => defaultValues.includes(value));
+        },
+        message: props => `${props.value} is not a valid list name!`
+      },
+      required: true
     }
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    collection: 'Users'
+  }
 );
 
 // Hash the password before saving it to the database
