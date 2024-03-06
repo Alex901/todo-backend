@@ -61,3 +61,5 @@ mongoose.connection.once('open', () => {
     console.log('Connected to MongoDB cluster:', mongoose.connection.client.s.url);
     app.listen(PORT, () => console.log(`Server running on port: ${PORT}`))
 })
+
+module.exports = app;

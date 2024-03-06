@@ -3,15 +3,13 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema(
   {
-    userName: {
+    username: {
       type: String,
       required: true,
-      unique: true
     },
     email: {
       type: String,
       required: true,
-      unique: true,
       validate: {
         validator: function(v) {
           // Regular expression for email validation
@@ -50,7 +48,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: 'users'
+    collection: 'Users'
   }
 );
 

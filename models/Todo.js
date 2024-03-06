@@ -28,7 +28,8 @@ const todoSchema = new mongoose.Schema({
         type: Date
     }
 }, {
-    collection: 'Offline-entries' 
+    collection: 'Offline-entries', 
+    timestamps: true
 });
 
 const Todo = mongoose.model('Todo', todoSchema);

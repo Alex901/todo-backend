@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "mocha -r esm tests/*.test.js",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -14,8 +14,10 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
+    "chai": "^4.4.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "esm": "^3.2.25",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.2.0",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "mocha": "^10.3.0",
     "nodemon": "^3.1.0",
     "supertest": "^6.3.4"
   }

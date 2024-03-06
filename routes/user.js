@@ -13,6 +13,18 @@ router.get('/auth', authenticate, (req, res) => {
 router.post('/create', async (req, res) => {
   console.log("Req body: ", req.body);
   try {
+    // Check if username is null
+    if (!req.body.username) {
+      console.log(req.body.username);
+      return res.status(400).send({ error: 'Username is required' });
+    }
+
+    // Check if username already exists
+    const existingUser = await User.findOne({ username: req.body.username });
+    if (existingUser) {
+      return res.status(400).send({ error: 'Username already exists' });
+    }
+
     const user = new User(req.body);
     await user.save();
     res.status(201).send(user);
@@ -23,13 +35,15 @@ router.post('/create', async (req, res) => {
 });
 
 // GET /users/:id - Get a specific user by their ID
-router.get('/:id', async (req, res) => {
+router.get('/:username', async (req, res) => {
+  console.log('Username: ', req.params.username);
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ username: req.params.username } );
     if (!user) {
-      return res.status(404).send();
+      console.log('User not found');
+      return res.status(404).send({ message: 'User not found' });
     }
-    res.send(user);
+    res.status(200).send(user);
   } catch (error) {
     res.status(500).send();
   }
