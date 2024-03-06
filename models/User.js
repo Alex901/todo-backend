@@ -44,6 +44,13 @@ const userSchema = new mongoose.Schema(
         },
         message: props => `${props.value} is not a valid list name!`
       },
+
+    },
+    activeList: {
+      type: String,
+      default: function() {
+        return this.listNames[0];
+      }
     }
   },
   {

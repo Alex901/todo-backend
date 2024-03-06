@@ -43,6 +43,7 @@ router.get('/:username', async (req, res) => {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });
     }
+    console.log('User found: ', user);
     res.status(200).send(user);
   } catch (error) {
     res.status(500).send();
