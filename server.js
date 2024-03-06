@@ -47,16 +47,16 @@ app.get('/', (req, res) => {
 app.use('/api', entriesRountes);
 
 
-/* // Define authentication routes
+// Define authentication routes
 app.use('/auth', authRoutes);
 
 // Define user routes
-app.use('/user', userRoutes);
+app.use('/users', userRoutes);
 
 app.get('/', (req, res) => {
     res.send("server is running");
 });
- */
+
 mongoose.connection.once('open', () => {
     console.log('Connected to MongoDB cluster:', mongoose.connection.client.s.url);
     app.listen(PORT, () => console.log(`Server running on port: ${PORT}`))

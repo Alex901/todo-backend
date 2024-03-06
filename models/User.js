@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema(
   {
-    username: {
+    userName: {
       type: String,
       required: true,
       unique: true
@@ -11,7 +11,15 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
+      validate: {
+        validator: function(v) {
+          // Regular expression for email validation
+          var emailRegex = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+          return emailRegex.test(v);
+        },
+        message: props => `${props.value} is not a valid email!`
+      }
     },
     password: {
       type: String,
@@ -19,29 +27,30 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user'
+      default: 'user',
+      enum: ['user', 'admin']
+      
     },
     listNames: {
       type: [String],
       default: function () {
-        // Access the username using this.username
-        return [`${this.username}'s list`, 'defaultList', 'dailyList'];
+        const defaultValues = ['default', 'daily', 'all', 'shared'];
+
+        return [...new Set([...defaultValues])];
       },
       validate: {
         validator: function (arr) {
           // Define your default strings here
-          const defaultValues = ['defaultList', 'dailyList'];
-          return arr.every(value => defaultValues.includes(value));
+          const defaultValues = ['default', 'daily', 'all', 'shared'];
+          return defaultValues.every(value => arr.includes(value));
         },
         message: props => `${props.value} is not a valid list name!`
       },
-      required: true
     }
   },
   {
     timestamps: true,
-    collection: 'Users'
+    collection: 'users'
   }
 );
 
