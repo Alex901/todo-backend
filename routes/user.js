@@ -77,18 +77,17 @@ router.delete('/:id', async (req, res) => {
 });
 
 // PATCH /users/set-active-list - Set the active list for a user
-router.patch('/set-active-list', async (req, res) => {
+router.patch('/setlist/:id', async (req, res) => {
   console.log('Req body: ', req.body);
-  console.log('res body: ', res.body);
   try {
-    onsole.log('Req body: ', req.body);
-    const user = await User.findByIdAndUpdate(req.user._id, { activeList: req.body.activeList }, { new: true });
+    const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList }, { new: true });
     if (!user) {
       return res.status(404).send();
     }
     res.send(user);
   } catch (error) {
-    res.status(500).send();
+    console.error('Error setting active list', error);
+    console.error('Error', error.message);
   }
 });
 

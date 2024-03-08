@@ -45,7 +45,10 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', entriesRountes);
-
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`, req.body);
+  next();
+});
 
 // Define authentication routes
 app.use('/auth', authRoutes);
