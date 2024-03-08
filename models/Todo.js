@@ -12,7 +12,7 @@ const todoSchema = new mongoose.Schema({
     isDone: {
         type: Boolean,
         required: true
-    }, 
+    },
     created: {
         type: Date,
         required: true
@@ -26,9 +26,42 @@ const todoSchema = new mongoose.Schema({
     },
     started: {
         type: Date
-    }
+    },
+    owner: {
+        type: String, // TODO: use user _id instead
+    },
+    inList: {
+        type: [String],
+        required: function() {
+          return this.owner != null;
+        },
+        default: function() {
+          return this.owner != null ? ['all'] : [];
+        }
+      },
+    priority: {
+        type: String,
+        required: true,
+        enum: ['VERY LOW', 'LOW', 'NORMAL', 'HIGH', 'VERY HIGH'],
+        default: 'NORMAL'
+    },
+    iSUrgent: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    dueDate: {
+        type: Date
+    },
+    description: {
+        type: String
+    },
+    steps: {
+        type: [String],
+        default: []
+    },
 }, {
-    collection: 'Offline-entries', 
+    collection: 'Offline-entries',
     timestamps: true
 });
 

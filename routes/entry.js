@@ -8,9 +8,7 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   try {
     // Extract data from the request body
-    const { id, task, isDone, created, completed, isStarted, started } = req.body;
-
-    console.log("Req body before adding to database", req.body);
+    const { id, task, isDone, created, completed, isStarted, started, owner, steps, priority, dueDate, description, iSUrgent, inList } = req.body;
 
     // Create a new todo entry
     const todo = new Todo({
@@ -20,14 +18,18 @@ router.post('/', async (req, res) => {
       created,
       completed,
       isStarted,
-      started
+      started,
+      owner,
+      steps,
+      priority,
+      dueDate,
+      description,
+      iSUrgent, 
+      inList
     });
-
-    console.log("Todo before adding to db: ", todo);
     // Save the todo entry to the database
     await todo.save(); //Error happens here 
 
-    console.log("Todo after adding to db: ", todo);
 
     res.status(201).json({ message: 'Todo entry created successfully', todo });
   } catch (error) {
@@ -48,7 +50,7 @@ router.get('/todos', async (req, res) => {
     try {
         const entries = await Todo.find();
 
-        await updateData(entries); //remember this one
+        await updateData(entries);
 
         res.json(entries);
     } catch(error) {
@@ -184,6 +186,20 @@ router.patch('/edit', async (req, res) => {
     res.status(200).json({ message: 'Task updated successfully', updatedTodo });
   } catch (error) {
     console.error('Error updating task:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.patch('/update', async (req, res) => {
+  try {
+    const update = req.body;
+    console.log("update: ", update);  
+    // Update all documents in the Todo collection
+    await Todo.updateMany({}, update);
+
+    res.status(200).json({ message: 'All entries updated successfully' });
+  } catch (error) {
+    console.error('Error updating entries', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
