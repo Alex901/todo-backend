@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
+const Todo = require('../models/Todo');
 
 const router = express.Router();
 
@@ -90,5 +91,52 @@ router.patch('/setlist/:id', async (req, res) => {
     console.error('Error', error.message);
   }
 });
+
+router.patch('/addlist/:id', async (req, res) => {
+  console.log('Req body: ', req.body);
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send();
+    }
+    if (user.listNames.includes(req.body.listName)) {
+      return res.status(400).send({ error: 'List name already exists' });
+    }
+    user.listNames.push(req.body.listName);
+    user.activeList = req.body.listName;
+    await user.save();
+    res.send(user);
+  } catch (error) {
+    console.error('Error adding list', error);
+    console.error('Error', error.message);
+  }
+});
+
+router.delete('/deletelist/:id', async (req, res) => {
+  console.log('Req body: ', req.body);
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send();
+    } 
+    if (!user.listNames.includes(req.body.listName)) {
+      return res.status(400).send({ error: 'List name does not exist' });
+    }
+    //delete entries in the deleted list
+    await Todo.deleteMany({ inList: { $in: [req.body.listName] }});
+
+    //update the user's listNames
+    user.listNames = user.listNames.filter(listName => listName !== req.body.listName);
+    user.activeList = user.listNames[0];
+    await user.save();
+
+    res.send(user);
+  } catch (error) {
+    console.error('Error deleting list', error);
+    console.error('Error', error.message);
+  }
+});
+
+
 
 module.exports = router;

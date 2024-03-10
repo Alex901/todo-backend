@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
       inList
     });
     // Save the todo entry to the database
-    await todo.save(); //Error happens here 
+    await todo.save(); 
 
 
     res.status(201).json({ message: 'Todo entry created successfully', todo });

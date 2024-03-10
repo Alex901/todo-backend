@@ -32,14 +32,14 @@ const userSchema = new mongoose.Schema(
     listNames: {
       type: [String],
       default: function () {
-        const defaultValues = ['default', 'daily', 'all', 'shared'];
+        const defaultValues = ['all', 'default', 'today', 'shared'];
 
         return [...new Set([...defaultValues])];
       },
       validate: {
         validator: function (arr) {
           // Define your default strings here
-          const defaultValues = ['default', 'daily', 'all', 'shared'];
+          const defaultValues = ['all', 'default', 'today', 'shared'];
           return defaultValues.every(value => arr.includes(value));
         },
         message: props => `${props.value} is not a valid list name!`
