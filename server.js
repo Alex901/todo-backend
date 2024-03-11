@@ -15,7 +15,7 @@ const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'acces
 const app = express();
 const PORT = process.env.PORT || 5000;
 const allowOrigins = [
-    'the-task-forge.netlify.app',
+    'https://the-task-forge.netlify.app',
     'http://localhost:5173'
 ]
 const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
