@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const stepSchema = new mongoose.Schema({
+    id: Number,
+    taskName: String,
+    isDone: Boolean
+  });
+
 const todoSchema = new mongoose.Schema({
     id: {
         type: Number,
@@ -41,14 +47,14 @@ const todoSchema = new mongoose.Schema({
       },
     priority: {
         type: String,
-        required: true,
-        enum: ['VERY LOW', 'LOW', 'NORMAL', 'HIGH', 'VERY HIGH'],
-        default: 'NORMAL'
+        enum: ['', 'VERY LOW', 'LOW', 'NORMAL', 'HIGH', 'VERY HIGH'],
+    },
+    difficulty: {
+        type: String,
+        enum: ['', 'VERY EASY', 'EASY', 'NORMAL', 'HARD', 'VERY HARD'],
     },
     iSUrgent: {
         type: Boolean,
-        required: true,
-        default: false
     },
     dueDate: {
         type: Date
@@ -57,7 +63,7 @@ const todoSchema = new mongoose.Schema({
         type: String
     },
     steps: {
-        type: [String],
+        type: [stepSchema],
         default: []
     },
 }, {
