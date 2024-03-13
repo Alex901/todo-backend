@@ -66,6 +66,9 @@ const todoSchema = new mongoose.Schema({
         type: [stepSchema],
         default: []
     },
+    estimatedTime: {
+        type: Number
+    },
 }, {
     collection: 'Offline-entries',
     timestamps: true
