@@ -53,7 +53,7 @@ const todoSchema = new mongoose.Schema({
         type: String,
         enum: ['', 'VERY EASY', 'EASY', 'NORMAL', 'HARD', 'VERY HARD'],
     },
-    iSUrgent: {
+    isUrgent: {
         type: Boolean,
     },
     dueDate: {
