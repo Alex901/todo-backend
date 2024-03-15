@@ -9,6 +9,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan'); //testing different loggers
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const { authenticate } = require('./middlewares/auth');
 
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'access.log'), { flags: 'a' });
 
@@ -24,6 +26,7 @@ const errorLogPath = path.join(__dirname, 'logs', 'error.log');
 // Connect to MongoDB
 connectDB();
 
+app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(morgan('combined', { stream: accessLogStream }));
 app.use(express.json());
@@ -44,20 +47,15 @@ app.get('/', (req, res) => {
     res.send("server is running");
 });
 
+
+
 app.use('/api', entriesRountes);
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`, req.body);
-  next();
-});
-
-// Define authentication routes
 app.use('/auth', authRoutes);
-
-// Define user routes
 app.use('/users', userRoutes);
 
-app.get('/', (req, res) => {
-    res.send("server is running");
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`, req.body);
+    next();
 });
 
 mongoose.connection.once('open', () => {

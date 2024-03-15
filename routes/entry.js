@@ -1,6 +1,7 @@
 const express = require('express');
 const Todo = require('../models/Todo'); 
 const logger = require('../middlewares/logger');
+const { authenticate } = require('../middlewares/auth');
 
 const router = express.Router();
 

@@ -23,8 +23,6 @@ router.post('/login', async(req, res) => {
             console.log('User not found');
             return res.status(404).send({ error: 'User not found' });
         }
-   /*      console.log('passowrd from request: ', req.body.password)
-        console.log('user password: ', user.password); */
 
         // Authenticate the user
         const isMatch = await bcrypt.compare(req.body.password, user.password);
@@ -34,6 +32,7 @@ router.post('/login', async(req, res) => {
             return res.status(400).send({ error: 'Invalid login credentials' });
         } else {
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
+            res.cookie('token', token, { httpOnly: true });
             res.status(200).send({ message: 'User authenticated', token });
         }
 
@@ -41,6 +40,11 @@ router.post('/login', async(req, res) => {
         console.error(error);
         res.status(500).send({ error: error.toString() });
     }
+});
+
+router.post('/logout', (req, res) => {
+    res.cookie('token', '', { expires: new Date(0) });
+    res.status(200).send({ message: 'User logged out' });
 });
 
 
