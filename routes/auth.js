@@ -44,7 +44,7 @@ router.post('/login', async(req, res) => {
 
 router.post('/logout', (req, res) => {
     console.log('DEBUG, Cookie', res.cookie);
-    res.cookie('token', '', { domain:'todo-backend-gkdo.onrender.com', maxAge: 0, path: '/', secure: true, sameSite: 'none' });
+    res.clearCookie('token', { path: '/', secure: true, sameSite: 'none' });
     res.status(200).send({ message: 'User logged out' });
 });
 
