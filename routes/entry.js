@@ -2,6 +2,7 @@ const express = require('express');
 const Todo = require('../models/Todo'); 
 const logger = require('../middlewares/logger');
 const { authenticate } = require('../middlewares/auth');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -49,13 +50,22 @@ router.post('/', async (req, res) => {
 });
 
 // Fetch entries from database
-router.get('/todos', async (req, res) => {
+router.get('/todos', authenticate, async  (req, res) => {
+  console.log("DEBUG: route: /api/todos: req.user: ", req.user);
     try {
-        const entries = await Todo.find();
+      let entries;
+      if (req.user) {
+          // If a valid token was provided, return users entries
+         
+          entries = await Todo.find({ owner: req.user.username }); //REMEMBER: observer and shared too
+      } else {
+          // If no token was provided, return limited entries: guest user
+          entries = await Todo.find({ inList: { $eq: [] } });
+      }
 
-        await updateData(entries);
+      //await updateData(entries);
 
-        res.json(entries);
+      res.json(entries);
     } catch(error) {
         console.error('Error fetching entries', error);
         res.status(500).json({ message: 'Internal server error' });

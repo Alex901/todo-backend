@@ -3,25 +3,34 @@ const User = require('../models/User');
 
 
 const authenticate = async (req, res, next) => {
-  console.log(req.headers);
-  const token = req.cookies.token;
+  const authHeader = req.headers.authorization;
+  console.log('DEBUG: authHeader: ', authHeader);
 
-  if (!token) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
+  if (authHeader) {
+    const token = authHeader.split(' ')[1]; // Extract the token from the Authorization header
 
-  try {
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-    const user = await User.findById(decodedToken.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (token !== 'undefined') {
+      try {
+        const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+        console.log('DEBUG: Decoded token: ', decodedToken);
+        const user = await User.findById(decodedToken.userId);
+        if (user) {
+          console.log('DEBUG: User authenticated: ', user.username);
+          req.user = user;
+        } else {
+          console.log('DEBUG: No user found with this ID');
+        }
+      } catch (error) {
+        console.error('Invalid token', error);
+      }
+    } else {
+      console.log('DEBUG: Token is undefined');
     }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+  } else {
+    console.log('DEBUG: No token provided');
   }
+
+  next();
 };
 
 module.exports = { authenticate };
