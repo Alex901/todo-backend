@@ -32,7 +32,7 @@ router.post('/login', async(req, res) => {
             return res.status(400).send({ error: 'Invalid login credentials' });
         } else {
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
-            res.cookie('token', token, { sameSite: 'none', secure: true, httpOnly: true});
+            res.cookie('token', token, { sameSite: 'None', secure: true, httpOnly: true});
             res.status(200).send({ message: 'User authenticated' });
         }
 
@@ -44,7 +44,7 @@ router.post('/login', async(req, res) => {
 
 router.post('/logout', (req, res) => {
     console.log('DEBUG, Cookie', res.cookie);
-    res.cookie('token', '', { maxAge: 0 });
+    res.cookie('token', '', { domain:'todo-backend-gkdo.onrender.com', maxAge: 0, path: '/', secure: true, sameSite: 'none' });
     res.status(200).send({ message: 'User logged out' });
 });
 

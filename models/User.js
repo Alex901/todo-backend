@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       validate: {
-        validator: function(v) {
+        validator: function (v) {
           // Regular expression for email validation
           var emailRegex = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
           return emailRegex.test(v);
@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'user',
       enum: ['user', 'admin']
-      
+
     },
     listNames: {
       type: [String],
@@ -48,10 +48,15 @@ const userSchema = new mongoose.Schema(
     },
     activeList: {
       type: String,
-      default: function() {
+      default: function () {
         return this.listNames[0];
       }
-    }
+    },
+/*     isLoggedIn: {
+      type: Boolean,
+      default: false,
+      required: true
+    } */
   },
   {
     timestamps: true,
