@@ -51,7 +51,6 @@ router.post('/', async (req, res) => {
 
 // Fetch entries from database
 router.get('/todos', authenticate, async  (req, res) => {
-  console.log("DEBUG: route: /api/todos: req.user: ", req.user);
     try {
       let entries;
       if (req.user) {

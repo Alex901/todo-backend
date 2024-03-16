@@ -43,9 +43,39 @@ router.post('/login', async(req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-    console.log('DEBUG, Cookie', res.cookie);
     res.clearCookie('token', { path: '/', secure: true, sameSite: 'none' });
     res.status(200).send({ message: 'User logged out' });
+});
+
+router.get('/checkLogin', async (req, res) => {
+    const token = req.cookies.token;
+
+    // If there's no token, the user is not logged in
+    if (!token) {
+        return res.json({ valid: false });
+    }
+    // Verify the token
+    jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
+        console.log('Decoded user: ', decoded.userId);
+        if (err) {
+            return res.json({ valid: false });
+        }
+
+    
+
+        // Fetch the user from the database
+        try {
+            const user = await User.findById(decoded.userId); 
+            if (!user) {
+                return res.json({ valid: false });
+            }
+
+            return res.json({ valid: true, user });
+        } catch (err) {
+            console.error(err);
+            return res.json({ valid: false });
+        }
+    });
 });
 
 

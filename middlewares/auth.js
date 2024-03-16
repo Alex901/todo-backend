@@ -8,19 +8,17 @@ const authenticate = async (req, res, next) => {
   if (token) {
     try {
       const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-      console.log('DEBUG: Decoded token: ', decodedToken);
       const user = await User.findById(decodedToken.userId);
       if (user) {
-        console.log('DEBUG: User authenticated: ', user.username);
         req.user = user;
       } else {
-        console.log('DEBUG: No user found with this ID');
+        console.error('User not found');
       }
     } catch (error) {
       console.error('Invalid token', error);
     }
   } else {
-    console.log('DEBUG: No token provided');
+    console.error('No token found');
   }
 
   next();
