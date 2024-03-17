@@ -55,7 +55,6 @@ router.get('/todos', authenticate, async  (req, res) => {
       let entries;
       if (req.user) {
           // If a valid token was provided, return users entries
-         
           entries = await Todo.find({ owner: req.user.username }); //REMEMBER: observer and shared too
       } else {
           // If no token was provided, return limited entries: guest user
@@ -215,5 +214,36 @@ router.patch('/update', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+router.patch('/stepComplete', async (req, res) => {
+  const { taskId, stepId } = req.body;
+
+  try {
+    // Find the task by id
+    const task = await Todo.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    console.log("task: ", task.steps.id(stepId));
+    // Find the step in the task's steps array and mark it as completed
+    const step = task.steps.find(step => step.id === stepId);
+    console.log("step: ", step);
+    if (!step) {
+      return res.status(404).json({ message: 'Step not found' });
+    }
+
+    step.isDone = true;
+
+    // Save the updated task
+    await task.save();
+
+    res.status(200).json({ message: 'Step marked as done successfully' });
+  } catch (error) {
+    console.error('Error marking step as done:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 
 module.exports = router;
