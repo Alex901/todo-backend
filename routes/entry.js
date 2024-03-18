@@ -224,10 +224,8 @@ router.patch('/stepComplete', async (req, res) => {
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    console.log("task: ", task.steps.id(stepId));
     // Find the step in the task's steps array and mark it as completed
     const step = task.steps.find(step => step.id === stepId);
-    console.log("step: ", step);
     if (!step) {
       return res.status(404).json({ message: 'Step not found' });
     }
@@ -240,6 +238,36 @@ router.patch('/stepComplete', async (req, res) => {
     res.status(200).json({ message: 'Step marked as done successfully' });
   } catch (error) {
     console.error('Error marking step as done:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.patch('/stepUncomplete', async (req, res) => {
+  const { taskId, stepId } = req.body;
+  console.log("req.body: ", req.body)
+  try {
+    // Find the task by id
+    const task = await Todo.findById(taskId);
+    console.log("task: ", task);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Find the step in the task's steps array and mark it as uncompleted
+    const step = task.steps.find(step => step.id === stepId);
+    console.log("step: ", step);
+    if (!step) {
+      return res.status(404).json({ message: 'Step not found' });
+    }
+
+    step.isDone = false;
+
+    // Save the updated task
+    await task.save();
+
+    res.status(200).json({ message: 'Step marked as undone successfully' });
+  } catch (error) {
+    console.error('Error marking step as undone:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
