@@ -31,24 +31,34 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin']
     },
     listNames: {
-      type: [String],
-      default: function () {
-        const defaultValues = ['all', 'default', 'today', 'shared'];
-        return [...new Set([...defaultValues])];
-      },
-      validate: {
-        validator: function (arr) {
-          // Define your default strings here
-          const defaultValues = ['all', 'default', 'today', 'shared'];
-          return defaultValues.every(value => arr.includes(value));
+      type: [{
+        name: {
+          type: String,
+          required: true,
         },
-        message: props => `${props.value} is not a valid list name!`
+        tags: {
+          type: [String],
+          default: [],
+        },
+        description: {
+          type: String,
+          default: '',
+        },
+      }],
+      default: function () {
+        const defaultValues = [
+          { name: 'all', tags: [], description: '' },
+          { name: 'default', tags: [], description: '' },
+          { name: 'today', tags: [], description: '' },
+          { name: 'shared', tags: [], description: '' },
+        ];
+        return defaultValues;
       },
     },
     activeList: {
       type: String,
       default: function () {
-        return this.listNames[0];
+        return this.listNames[0].name;
       }
     },
     settings: {

@@ -81,7 +81,7 @@ router.delete('/:id', async (req, res) => {
 router.patch('/setlist/:id', async (req, res) => {
   console.log('Req body: ', req.body);
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList }, { new: true });
+    const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList.name }, { new: true });
     if (!user) {
       return res.status(404).send();
     }
@@ -99,11 +99,16 @@ router.patch('/addlist/:id', async (req, res) => {
     if (!user) {
       return res.status(404).send();
     }
-    if (user.listNames.includes(req.body.listName)) {
+    if (user.listNames.some(list => list.name === req.body.listName)) {
       return res.status(400).send({ error: 'List name already exists' });
     }
-    user.listNames.push(req.body.listName);
-    user.activeList = req.body.listName;
+    const newList = {
+      name: req.body.listName,
+      tags: [],
+      description: '',
+    };
+    user.listNames.push(newList);
+    user.activeList = newList.name;
     await user.save();
     res.send(user);
   } catch (error) {
@@ -119,15 +124,15 @@ router.delete('/deletelist/:id', async (req, res) => {
     if (!user) {
       return res.status(404).send();
     } 
-    if (!user.listNames.includes(req.body.listName)) {
+    if (!user.listNames.some(list => list.name === req.body.listName)) {
       return res.status(400).send({ error: 'List name does not exist' });
     }
     //delete entries in the deleted list
     await Todo.deleteMany({ inList: { $in: [req.body.listName] }});
 
     //update the user's listNames
-    user.listNames = user.listNames.filter(listName => listName !== req.body.listName);
-    user.activeList = user.listNames[0];
+    user.listNames = user.listNames.filter(list => list.name !== req.body.listName);
+    user.activeList = user.listNames[0] ? user.listNames[0].name : '';
     await user.save();
 
     res.send(user);

@@ -24,3 +24,7 @@ todo-backend/
 *.njsproj
 *.sln
 *.sw?
+
+
+# Ignore updateUser.js
+updateUser.js
