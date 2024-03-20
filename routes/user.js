@@ -137,6 +137,24 @@ router.delete('/deletelist/:id', async (req, res) => {
   }
 });
 
+router.patch('/toggleurgent/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send({ error: 'User not found' });
+    }
+
+    // Update the 'urgentOnly' field
+    user.settings.todoList.urgentOnly = req.body['settings.todoList.urgentOnly'];
+    await user.save();
+
+    res.status(200).send(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: error.toString() });
+  }
+});
+
 
 
 module.exports = router;

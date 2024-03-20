@@ -29,13 +29,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'user',
       enum: ['user', 'admin']
-
     },
     listNames: {
       type: [String],
       default: function () {
         const defaultValues = ['all', 'default', 'today', 'shared'];
-
         return [...new Set([...defaultValues])];
       },
       validate: {
@@ -46,7 +44,6 @@ const userSchema = new mongoose.Schema(
         },
         message: props => `${props.value} is not a valid list name!`
       },
-
     },
     activeList: {
       type: String,
@@ -54,11 +51,27 @@ const userSchema = new mongoose.Schema(
         return this.listNames[0];
       }
     },
-/*     isLoggedIn: {
-      type: Boolean,
-      default: false,
-      required: true
-    } */
+    settings: {
+ 
+      todoList: {
+        selectedListOption: {
+          type: String,
+          enum: ['Created', 'Name', 'Deadline', 'Priority', 'Difficulty', 'Time', 'Steps', 'all'],
+          default: 'Created',
+
+        },
+        urgentOnly: {
+          type: Boolean,
+          default: false,
+
+        },
+        deadlineOnly: {
+          type: Boolean,
+          default: false,
+  
+        },
+      }
+    }
   },
   {
     timestamps: true,
