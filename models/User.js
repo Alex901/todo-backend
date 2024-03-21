@@ -48,9 +48,7 @@ const userSchema = new mongoose.Schema(
       default: function () {
         const defaultValues = [
           { name: 'all', tags: [], description: '' },
-          { name: 'default', tags: [], description: '' },
           { name: 'today', tags: [], description: '' },
-          { name: 'shared', tags: [], description: '' },
         ];
         return defaultValues;
       },
