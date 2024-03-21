@@ -160,6 +160,68 @@ router.patch('/toggleurgent/:id', async (req, res) => {
   }
 });
 
+router.patch('/addtag/:id', async (req, res) => {
+
+  try {
+      const user = await User.findById(req.params.id);
+      if (!user) {
+          return res.status(404).send('User not found');
+      }
+      const activeList = req.body.activeList;
+      const list = user.listNames.find(list => list.name === activeList);
+      if (!list) {
+          return res.status(404).send('List not found');
+      }
+
+      const newTag = {
+          label: req.body.tagName,
+          color: req.body.tagColor,
+          textColor: req.body.textColor,
+          uses: 0
+      };
+
+      list.tags.push(newTag);
+
+      await user.save();
+
+      res.status(200).send(user);
+  } catch (error) {
+      console.error('Error adding tag', error);
+      res.status(500).send('Internal server error');
+  }
+});
+
+router.delete('/deletetag/:id', async (req, res) => {
+  try {
+      const user = await User.findById(req.params.id);
+      if (!user) {
+          return res.status(404).send('User not found');
+      }
+
+      const activeList = req.body.activeList;
+      const tagName = req.body.tagName;
+
+      const list = user.listNames.find(list => list.name === activeList);
+      if (!list) {
+          return res.status(404).send('List not found');
+      }
+
+      const tagIndex = list.tags.findIndex(tag => tag.label === tagName);
+      if (tagIndex === -1) {
+          return res.status(404).send('Tag not found');
+      }
+
+      list.tags.splice(tagIndex, 1);
+
+      await user.save();
+
+      res.status(200).send(user);
+  } catch (error) {
+      console.error('Error deleting tag', error);
+      res.status(500).send('Internal server error');
+  }
+});
+
 
 
 module.exports = router;

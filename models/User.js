@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    profilePicture: {
+      type: String,
+      default: '',
+    },
     email: {
       type: String,
       required: true,
@@ -37,9 +41,28 @@ const userSchema = new mongoose.Schema(
           required: true,
         },
         tags: {
-          type: [String],
+          type: [
+              {
+                  label: {
+                      type: String,
+                      required: true,
+                  },
+                  color: {
+                      type: String,
+                      default: '#FFFFFF', // Default color is white
+                  },
+                  textColor: {
+                      type: String,
+                      default: '#000000', // Default text color is black
+                  },
+                  uses: {
+                      type: Number,
+                      default: 0,
+                  },
+              },
+          ],
           default: [],
-        },
+      },
         description: {
           type: String,
           default: '',
