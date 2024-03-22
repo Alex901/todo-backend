@@ -70,7 +70,7 @@ const todoSchema = new mongoose.Schema({
         type: Number
     },
     tags: {
-        type: [String],
+        type: [{}],
         default: []
     }
 }, {
