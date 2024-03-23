@@ -180,7 +180,12 @@ router.patch('/addtag/:id', async (req, res) => {
           uses: 0
       };
 
+    
+
       list.tags.push(newTag);
+      user.activeList = activeList;
+
+        //IF i want to add all tags to "all" too, this is where i do it. 
 
       await user.save();
 
