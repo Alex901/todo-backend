@@ -62,8 +62,6 @@ router.get('/todos', authenticate, async  (req, res) => {
           entries = await Todo.find({ inList: { $eq: [] } });
       }
 
-      entries = await Todo.find({ owner: req.user.username });
-
       //await updateData(entries);
 
       res.json(entries);
