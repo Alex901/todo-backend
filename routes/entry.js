@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
 });
 
 // Fetch entries from database
-router.get('/todos', authenticate, async  (req, res) => {
+router.get('/todos', async  (req, res) => {
     try {
       let entries;
       if (req.user) {
