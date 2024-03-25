@@ -3,8 +3,15 @@ const Todo = require('../models/Todo');
 const logger = require('../middlewares/logger');
 const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
+const cors = require('cors');
 
 const router = express.Router();
+
+const corsOptions = {
+  allowedHeaders: ['User', 'Content-Type'], 
+  credentials: true,
+};
+
 
 // Route to store a new todo entry
 router.post('/', async (req, res) => {
@@ -70,6 +77,27 @@ router.get('/todos', authenticate, async  (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 })
+
+router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
+  console.log("mobile request works, hurray!!!");
+  try {
+      let entries;
+      const username = req.headers['user'];
+
+      if (username) {
+          // If a username was provided, return users entries
+          entries = await Todo.find({ owner: username });
+      } else {
+          // If no username was provided, return limited entries: guest user
+          entries = await Todo.find({ inList: { $eq: [] } });
+      }
+
+      res.json(entries);
+  } catch(error) {
+      console.error('Error fetching entries', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 router.patch('/done', async (req, res) => {
   console.log(req.body)

@@ -24,6 +24,19 @@ const allowOrigins = [
 ]
 const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
 const errorLogPath = path.join(__dirname, 'logs', 'error.log');
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (allowOrigins.indexOf(origin) !== -1 || !origin) {
+          callback(null, true)
+        } else {
+          callback(new Error('Not allowed by CORS'))
+        }
+      },
+    allowedHeaders: ['User', 'Content-Type'],
+    credentials: true
+  };
+  
+app.use(cors(corsOptions));
 
 // Connect to MongoDB
 connectDB();
@@ -32,6 +45,7 @@ app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(morgan('combined', { stream: accessLogStream }));
 app.use(express.json());
+
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin || allowOrigins.includes(origin)) {
