@@ -32,7 +32,39 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: 'user',
-      enum: ['user', 'admin']
+      enum: ['user', 'donator', 'admin']
+    },
+    contacts: {
+      type: [
+        {
+          contact_id: {
+            type: String,
+            required: true,
+          },
+          username: {
+            type: String,
+            required: true,
+          },
+          email: {
+            type: String,
+            required: true,
+          },
+          role: {
+            type: String,
+            default: 'user',
+            enum: ['user', 'donator', 'admin']
+          },
+          profilePicture: {
+            type: String,
+            default: '',
+          },
+          contactList: {
+            type: [String],
+            default: [],
+          },
+        }
+      ],
+      default: [],
     },
     listNames: {
       type: [{

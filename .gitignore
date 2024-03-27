@@ -13,6 +13,9 @@ dist-ssr
 *.local
 todo-backend/
 .env
+stringify.js
+parsingTest.js
+encodeKey.js
 
 # Editor directories and files
 .vscode/*
