@@ -14,7 +14,7 @@ const authenticate = async (req, res, next) => {
       const user = await User.findById(decodedToken.userId);
       if (user) {
         req.user = user;
-      //  console.log('User found: ', user);
+      //  console.log('User found in auth: ', user);
       } else {
         console.error('User not found');
       }

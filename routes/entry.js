@@ -273,7 +273,7 @@ router.patch('/stepComplete', async (req, res) => {
 
 router.patch('/stepUncomplete', async (req, res) => {
   const { taskId, stepId } = req.body;
-  console.log("req.body: ", req.body)
+ // console.log("req.body: ", req.body)
   try {
     // Find the task by id
     const task = await Todo.findById(taskId);

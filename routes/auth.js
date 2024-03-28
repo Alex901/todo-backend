@@ -11,6 +11,7 @@ router.post('/register', register);
 
 
 router.post('/login', async(req, res) => {
+   // console.log("req body ", req.body);
     try{
         //Check if the username or password is null
         if (!req.body.username || !req.body.password) {
@@ -25,8 +26,9 @@ router.post('/login', async(req, res) => {
         }
 
         // Authenticate the user
+        console.log('Password: ', req.body.password, "  ", user.password);
         const isMatch = await bcrypt.compare(req.body.password, user.password);
-        //console.log('isMatch: ', isMatch);
+        console.log('isMatch: ', isMatch);
         if (!isMatch) {
             console.log(error.toString);
             return res.status(400).send({ error: 'Invalid login credentials' });

@@ -145,11 +145,13 @@ const userSchema = new mongoose.Schema(
 // Hash the password before saving it to the database
 userSchema.pre('save', async function (next) {
   const user = this;
+  console.log('user in userModel -> save start: ', user.password);
   if (!user.isModified('password')) return next();
 
   try {
     const salt = await bcrypt.genSalt();
     user.password = await bcrypt.hash(user.password, salt);
+    console.log('user in userModel -> save postHash: ', user.password);
     next();
   } catch (error) {
     return next(error);

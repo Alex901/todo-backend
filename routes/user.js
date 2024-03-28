@@ -72,7 +72,7 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
 
 // POST /users/create - Create a new user
 router.post('/create', async (req, res) => {
-  console.log("Req body: ", req.body);
+//  console.log("Req body: ", req.body);
   try {
     // Check if username is null
     if (!req.body.username) {
@@ -104,23 +104,49 @@ router.get('/:username', async (req, res) => {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });
     }
-    console.log('User found: ', user);
+   // console.log('User found: ', user);
     res.status(200).send(user);
   } catch (error) {
     res.status(500).send();
   }
 });
 
-// PATCH /users/:id - Update a specific user by their ID
-router.patch('/:id', async (req, res) => {
+// PATCH /users/edituser/:id - Update a specific user by their ID
+router.patch('/edituser/:id', authenticate, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).send();
     }
-    res.send(user);
+    const { userData, oldPassword, newPassword } = req.body;
+
+    // If oldPassword and newPassword are provided, authenticate the old password
+    if (oldPassword && newPassword) {
+      const isMatch = await user.comparePassword(oldPassword);
+      console.log("isMatch: ", isMatch);
+      if (!isMatch) {
+        return res.status(401).send({ message: 'Old password is incorrect' });
+      }
+      // Set the password to the new password
+      user.set({ password: newPassword });
+      userData.password = newPassword;
+      console.log("newPassword: ", user.password);
+    }
+
+    // console.log("userData: ", userData);
+    console.log("User pre: ", user);
+    console.log("User data pre: ", userData);
+    // Update the user data
+    Object.assign(user, userData);
+    console.log("User post: ", user);
+    console.log("User data post: ", userData);
+
+    // Save the updated user
+    const updatedUser = await user.save();
+
+    res.send(updatedUser);
   } catch (error) {
-    res.status(400).send(error);
+    res.status(500).send();
   }
 });
 
@@ -139,7 +165,6 @@ router.delete('/:id', async (req, res) => {
 
 // PATCH /users/set-active-list - Set the active list for a user
 router.patch('/setlist/:id', async (req, res) => {
-  console.log('Req body: ', req.body);
   try {
     const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList.name }, { new: true });
     if (!user) {
@@ -178,7 +203,6 @@ router.patch('/addlist/:id', async (req, res) => {
 });
 
 router.delete('/deletelist/:id', async (req, res) => {
-  console.log('Req body: ', req.body);
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
