@@ -165,11 +165,15 @@ router.delete('/:id', async (req, res) => {
 
 // PATCH /users/set-active-list - Set the active list for a user
 router.patch('/setlist/:id', async (req, res) => {
+  console.log('Req body: ', req.body);
   try {
     const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList.name }, { new: true });
     if (!user) {
       return res.status(404).send();
     }
+    console.log("active list", req.body.activeList)
+    user.activeList = req.body.activeList;
+    await user.save();
     res.send(user);
   } catch (error) {
     console.error('Error setting active list', error);
