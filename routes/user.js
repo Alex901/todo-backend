@@ -24,7 +24,6 @@ const storage = new Storage({
 
 const bucket = storage.bucket(process.env.GOOGLE_CLOUD_BUCKET_NAME);
 
-
 router.get('/auth', authenticate, (req, res) => {
   res.json({ message: `Welcome ${req.user.username}` });
 });
@@ -92,6 +91,18 @@ router.post('/create', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(400).send({ error: error.toString() });
+  }
+});
+
+// GET /users/getall - Get all users
+router.get('/getall', authenticate, async (req, res) => {
+  try {
+    const username = req.query.username;
+    const users = await User.find({});
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Error fetching users', error);
+    res.status(500).send('Internal server error');
   }
 });
 
