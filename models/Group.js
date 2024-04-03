@@ -5,6 +5,10 @@ const groupSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String,
+        default: ''
+    },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -21,7 +25,7 @@ const groupSchema = new mongoose.Schema({
                 role: {
                     type: String,
                     default: 'edit',
-                    enum: ['edit', 'view', 'observe']
+                    enum: ['edit', 'observe', 'moderator']
                 }
             }
         ],
@@ -67,5 +71,7 @@ const groupSchema = new mongoose.Schema({
     collection: 'Groups',
     timestamps: true
 });
+
+const Group = mongoose.model('Group', groupSchema);
 
 module.exports = mongoose.model('Group', groupSchema);

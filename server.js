@@ -5,7 +5,8 @@ const connectDB = require('./db');
 const fs = require('fs');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-const entriesRountes = require('./routes/entry');
+const entriesRoutes = require('./routes/entry');
+const groupRoutes = require('./routes/group');
 const Todo = require('./models/Todo');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -13,6 +14,7 @@ const morgan = require('morgan'); //testing different loggers
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const { authenticate } = require('./middlewares/auth');
+const { group } = require('console');
 
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'access.log'), { flags: 'a' });
 
@@ -65,9 +67,10 @@ app.get('/', (req, res) => {
 
 
 
-app.use('/api', entriesRountes);
+app.use('/api', entriesRoutes);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/groups', groupRoutes)
 
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`, req.body);

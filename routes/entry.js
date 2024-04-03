@@ -7,7 +7,7 @@ const cors = require('cors');
 
 const router = express.Router();
 
-const corsOptions = {
+const corsOptions = { //This is not nice
   allowedHeaders: ['User', 'Content-Type'], 
   credentials: true,
 };
