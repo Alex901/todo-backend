@@ -25,7 +25,7 @@ const groupSchema = new mongoose.Schema({
                 role: {
                     type: String,
                     default: 'edit',
-                    enum: ['edit', 'observe', 'moderator']
+                    enum: ['edit', 'observe', 'moderator'] // edit: standard and can interact with lists, observe: read-only, moderator: can add/remove members and create and remove lists
                 }
             }
         ],
@@ -74,4 +74,4 @@ const groupSchema = new mongoose.Schema({
 
 const Group = mongoose.model('Group', groupSchema);
 
-module.exports = mongoose.model('Group', groupSchema);
+module.exports = Group;

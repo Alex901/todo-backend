@@ -4,7 +4,7 @@ const stepSchema = new mongoose.Schema({
     id: Number,
     taskName: String,
     isDone: Boolean
-  });
+});
 
 const todoSchema = new mongoose.Schema({
     id: {
@@ -38,13 +38,13 @@ const todoSchema = new mongoose.Schema({
     },
     inList: {
         type: [String],
-        required: function() {
-          return this.owner != null;
+        required: function () {
+            return this.owner != null;
         },
-        default: function() {
-          return this.owner != null ? ['all'] : [];
+        default: function () {
+            return this.owner != null ? ['all'] : [];
         }
-      },
+    },
     priority: {
         type: String,
         enum: ['', 'VERY LOW', 'LOW', 'NORMAL', 'HIGH', 'VERY HIGH'],
@@ -76,7 +76,8 @@ const todoSchema = new mongoose.Schema({
 }, {
     collection: 'Offline-entries',
     timestamps: true
-});
+}
+);
 
 const Todo = mongoose.model('Todo', todoSchema);
 

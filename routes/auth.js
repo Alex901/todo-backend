@@ -10,9 +10,9 @@ const router = express.Router();
 router.post('/register', register);
 
 
-router.post('/login', async(req, res) => {
-   // console.log("req body ", req.body);
-    try{
+router.post('/login', async (req, res) => {
+    // console.log("req body ", req.body);
+    try {
         //Check if the username or password is null
         if (!req.body.username || !req.body.password) {
             return res.status(204).send();
@@ -34,7 +34,7 @@ router.post('/login', async(req, res) => {
             return res.status(400).send({ error: 'Invalid login credentials' });
         } else {
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
-            res.cookie('token', token, { sameSite: 'None', secure: true, httpOnly: true});
+            res.cookie('token', token, { sameSite: 'None', secure: true, httpOnly: true });
             res.status(200).send({ message: 'User authenticated' });
         }
 
@@ -63,11 +63,11 @@ router.get('/checkLogin', async (req, res) => {
             return res.json({ valid: false });
         }
 
-    
+
 
         // Fetch the user from the database
         try {
-            const user = await User.findById(decoded.userId); 
+            const user = await User.findById(decoded.userId);
             if (!user) {
                 return res.json({ valid: false });
             }

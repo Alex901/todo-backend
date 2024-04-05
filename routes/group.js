@@ -6,7 +6,6 @@ const Group = require('../models/Group');
 const router = express.Router();
 
 router.post('/create', authenticate, async (req, res) => {
-    console.log('Req body: ', req.body);
     try {
         const groupData = req.body;
         const newGroup = new Group(groupData);
