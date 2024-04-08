@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const User = require('./User');
 
 const groupSchema = new mongoose.Schema({
     name: {
@@ -71,6 +72,25 @@ const groupSchema = new mongoose.Schema({
     collection: 'Groups',
     timestamps: true
 });
+
+groupSchema.pre('save', async function(next) { // Notice: need to wait for add user implementation for further testing, but it looks like it works as intended
+    
+    if (this.isModified('members')) {
+        for (let member of this.members) {
+            const user = await User.findById(member.member_id);
+            if (user) {
+                for(let list of this.groupLists) {
+                    if(!user.listNames.includes(list)) {
+                        user.listNames.push(list);
+                    }
+                }
+                await user.save();
+            }
+        }
+    }
+    next();
+});
+
 
 const Group = mongoose.model('Group', groupSchema);
 
