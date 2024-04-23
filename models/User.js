@@ -34,11 +34,13 @@ const userSchema = new mongoose.Schema(
       default: 'user',
       enum: ['user', 'donator', 'admin']
     },
-/*     groups: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Group',
-      default: [],
-    }, */
+    groups: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group'
+      }],
+      default: []
+    },
 
     contacts: { //This is dumb, use references instead
       type: [
@@ -80,27 +82,27 @@ const userSchema = new mongoose.Schema(
         },
         tags: {
           type: [
-              {
-                  label: {
-                      type: String,
-                      required: true,
-                  },
-                  color: {
-                      type: String,
-                      default: '#FFFFFF', // Default color is white
-                  },
-                  textColor: {
-                      type: String,
-                      default: '#000000', // Default text color is black
-                  },
-                  uses: {
-                      type: Number,
-                      default: 0,
-                  },
+            {
+              label: {
+                type: String,
+                required: true,
               },
+              color: {
+                type: String,
+                default: '#FFFFFF', // Default color is white
+              },
+              textColor: {
+                type: String,
+                default: '#000000', // Default text color is black
+              },
+              uses: {
+                type: Number,
+                default: 0,
+              },
+            },
           ],
           default: [],
-      },
+        },
         description: {
           type: String,
           default: '',
@@ -121,7 +123,7 @@ const userSchema = new mongoose.Schema(
       }
     },
     settings: {
- 
+
       todoList: {
         selectedListOption: {
           type: String,
@@ -137,7 +139,7 @@ const userSchema = new mongoose.Schema(
         deadlineOnly: {
           type: Boolean,
           default: false,
-  
+
         },
       }
     }

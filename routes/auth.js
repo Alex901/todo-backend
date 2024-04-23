@@ -26,9 +26,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Authenticate the user
-        console.log('Password: ', req.body.password, "  ", user.password);
         const isMatch = await bcrypt.compare(req.body.password, user.password);
-        console.log('isMatch: ', isMatch);
         if (!isMatch) {
             console.log(error.toString);
             return res.status(400).send({ error: 'Invalid login credentials' });
@@ -58,7 +56,6 @@ router.get('/checkLogin', async (req, res) => {
     }
     // Verify the token
     jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
-        console.log('Decoded user: ', decoded.userId);
         if (err) {
             return res.json({ valid: false });
         }

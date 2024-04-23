@@ -59,6 +59,7 @@ router.post('/', async (req, res) => {
 
 // Fetch entries from database
 router.get('/todos', authenticate, async  (req, res) => {
+  console.log("req.params: ", req.query.groupLists);
     try {
       let entries;
       if (req.user) {

@@ -26,7 +26,7 @@ const groupSchema = new mongoose.Schema({
                 role: {
                     type: String,
                     default: 'edit',
-                    enum: ['edit', 'observe', 'moderator'] // edit: standard and can interact with lists, observe: read-only, moderator: can add/remove members and create and remove lists
+                    enum: ['edit', 'observer', 'moderator'] // edit: standard and can interact with lists, observe: read-only, moderator: can add/remove members and create and remove lists
                 }
             }
         ],
@@ -79,6 +79,9 @@ groupSchema.pre('save', async function(next) { // Notice: need to wait for add u
         for (let member of this.members) {
             const user = await User.findById(member.member_id);
             if (user) {
+                if (!user.groups.includes(this._id)) {
+                    user.groups.push(this._id);
+                }
                 for(let list of this.groupLists) {
                     if(!user.listNames.includes(list)) {
                         user.listNames.push(list);
