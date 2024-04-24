@@ -9,8 +9,13 @@ const listSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        required: true
+        required: true,
+        enum: ['private', 'public', 'group'],
     },
+    entries: {
+        type: int, 
+        required: true,
+        default: 0,
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
