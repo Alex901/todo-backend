@@ -63,6 +63,7 @@ const listSchema = new mongoose.Schema({
     collection: 'Lists'
 });
 
+
 const List = mongoose.model('List', listSchema);
 
 module.exports = List;

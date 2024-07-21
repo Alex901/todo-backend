@@ -37,6 +37,10 @@ const todoSchema = new mongoose.Schema({
     owner: {
         type: String, // TODO: change this at some point, use user _id instead. More robust
     },
+    inListNew: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'List',
+    }],
     inList: {
         type: [String],
         required: function () {

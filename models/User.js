@@ -159,9 +159,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.post('save', function(doc, next) {
-  console.log('User saved', doc, doc.isNew);
   if (doc.__v === 0) { // Check if the document is new
-    console.log('New user, creating default lists');
     const defaultLists = [
       { listName: 'all', tags: [], description: '', type: 'userList', visibility: 'private', owner: doc._id },
       { listName: 'today', tags: [], description: '', type: 'userList', visibility: 'private', owner: doc._id },
