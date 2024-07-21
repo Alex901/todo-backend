@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const List = require('./List');
 
 const userSchema = new mongoose.Schema(
   {
@@ -74,7 +75,7 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    lists: {
+    myLists: {
       type: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'List'
@@ -156,6 +157,27 @@ const userSchema = new mongoose.Schema(
     collection: 'Users'
   }
 );
+
+userSchema.post('save', function(doc, next) {
+  console.log('User saved', doc, doc.isNew);
+  if (doc.__v === 0) { // Check if the document is new
+    console.log('New user, creating default lists');
+    const defaultLists = [
+      { listName: 'all', tags: [], description: '', type: 'userList', visibility: 'private', owner: doc._id },
+      { listName: 'today', tags: [], description: '', type: 'userList', visibility: 'private', owner: doc._id },
+    ];
+
+    // Create default lists and assign them to the user
+    List.insertMany(defaultLists).then(lists => {
+      const listIds = lists.map(list => list._id);
+      User.findByIdAndUpdate(doc._id, { $set: { myLists: listIds } }, { new: true })
+        .then(() => next())
+        .catch(err => next(err));
+    }).catch(err => next(err));
+  } else {
+    next();
+  }
+});
 
 // Hash the password before saving it to the database
 userSchema.pre('save', async function (next) {

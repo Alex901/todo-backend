@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 const stepSchema = new mongoose.Schema({
     id: Number,
@@ -34,7 +35,7 @@ const todoSchema = new mongoose.Schema({
         type: Date
     },
     owner: {
-        type: String, // TODO: use user _id instead
+        type: String, // TODO: change this at some point, use user _id instead. More robust
     },
     inList: {
         type: [String],
