@@ -32,6 +32,12 @@ const groupSchema = new mongoose.Schema({
         ],
         required: true
     },
+    groupListsModel: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'List'
+        }
+    ],
     groupLists: {
         type: [{
             name: {
