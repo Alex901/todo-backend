@@ -74,6 +74,13 @@ const userSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    lists: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'List'
+      }],
+      default: []
+    },
     listNames: {
       type: [{
         name: {
