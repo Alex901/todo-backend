@@ -72,7 +72,7 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
 
 // POST /users/create - Create a new user
 router.post('/create', async (req, res) => {
-//  console.log("Req body: ", req.body);
+  //  console.log("Req body: ", req.body);
   try {
     // Check if username is null
     if (!req.body.username) {
@@ -116,7 +116,7 @@ router.get('/:username', async (req, res) => {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });
     }
-   // console.log('User found: ', user);
+    // console.log('User found: ', user);
     res.status(200).send(user);
   } catch (error) {
     res.status(500).send();
@@ -176,15 +176,22 @@ router.delete('/:id', async (req, res) => {
 });
 
 // PATCH /users/set-active-list - Set the active list for a user
+// Updated
 router.patch('/setlist/:id', async (req, res) => {
   console.log('Req body: ', req.body);
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList.name }, { new: true });
+    const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList.name }, { new: true }).populate('myLists');
     if (!user) {
       return res.status(404).send();
     }
-    console.log("active list", req.body.activeList)
-    user.activeList = req.body.activeList;
+    //console.log("active list:", req.body.activeList)
+    //console.log("DEBUG -- set list: user", user.myLists)
+    for (let list of user.myLists) {
+      if (list.listName === req.body.activeList) {
+        user.activeList = list.listName;
+      }
+    }
+
     await user.save();
     res.send(user);
   } catch (error) {
@@ -195,7 +202,7 @@ router.patch('/setlist/:id', async (req, res) => {
 //TODO: remember group list case!!!!
 //Updated
 router.patch('/addlist/:id', async (req, res) => {
-  console.log('Req body: ', req.body);
+  //console.log('Req body: ', req.body);
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -237,28 +244,57 @@ router.patch('/addlist/:id', async (req, res) => {
 });
 
 
-
+//TODO: Remember the group case !!!
+// Updated(except group) 
 router.delete('/deletelist/:id', async (req, res) => {
+  console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
   try {
     const user = await User.findById(req.params.id);
+    //console.log("User: ", user);
     if (!user) {
       return res.status(404).send();
     }
-    if (!user.listNames.some(list => list.name === req.body.listName)) {
+    if (!req.body.listName || typeof req.body.listName !== 'string') {
+      return res.status(400).send({ error: 'Invalid list name' });
+    }
+
+    // New functionality for the updated data model
+    if (user.myLists && Array.isArray(user.myLists) && user.myLists.length > 0) {
+      await user.populate('myLists');
+      console.log("DEBUG -- DeleteList -- User._id: ", user._id);
+      console.log("DEBUG -- DeleteList -- User.myLists: ", user.myLists);
+      const listToDelete = await List.findOne({ listName: req.body.listName, owner: user._id });
+      if (listToDelete) {
+        console.log("DEBUG -- DeleteList --List to delete: ", listToDelete);
+        await List.deleteOne({ _id: listToDelete._id });
+
+        // Update the user's myLists by filtering out the deleted list's ID
+        // Dead references will be removed here too
+        user.myLists = user.myLists.filter(listId => !listId._id.equals(listToDelete._id));
+        if (user.myLists.length > 0) {
+          user.activeList = user.myLists[0].listName;
+        } else {
+          user.activeList = '';
+        }
+        await Todo.deleteMany({ inListNew: { $in: [listToDelete._id] } })
+        await user.save();
+      }
+    }
+
+    // Existing functionality for deleting entries in the list and updating listNames
+    if (user.listNames && user.listNames.some(list => list.name === req.body.listName)) {
+      await Todo.deleteMany({ inList: { $in: [req.body.listName] } });
+      user.listNames = user.listNames.filter(list => list.name !== req.body.listName);
+      await user.save();
+    } else if (!user.myLists) {
+      // If the list name does not exist in the old model and myLists is not used
       return res.status(400).send({ error: 'List name does not exist' });
     }
-    //delete entries in the deleted list
-    await Todo.deleteMany({ inList: { $in: [req.body.listName] } });
-
-    //update the user's listNames
-    user.listNames = user.listNames.filter(list => list.name !== req.body.listName);
-    user.activeList = user.listNames[0] ? user.listNames[0].name : '';
-    await user.save();
 
     res.send(user);
   } catch (error) {
     console.error('Error deleting list', error);
-    console.error('Error', error.message);
+    res.status(500).send({ error: 'An error occurred while deleting the list' });
   }
 });
 
