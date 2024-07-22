@@ -89,19 +89,27 @@ async function updateGroups(users) {
         // console.log("DEBUG -- Popilated user: ", populatedUser);
 
         for (const group of populatedUser.groups) {
-            console.log("DEBUG -- Group: ", group);
-            outerloop: for (const list of group.groupLists) { 
+            //console.log("DEBUG -- Group: ", group);
+            outerloop: for (const list of group.groupLists) {
                 // Use the populated `myLists`
                 let existingList = populatedUser.myLists.find(userList => userList.listName === list.name);
 
                 if (existingList) {
                     if (group.groupListsModel.length > 0) { // Check if the list has already been added
                         const populatedGroup = await Group.findById(group._id).populate('groupListsModel').exec();
-                        console.log("DEBUG -- Model: ", populatedGroup)
+                        //console.log("DEBUG -- Model: ", populatedGroup)
                         for (model of group.groupListsModel) {
                             if (model.name === existingList.name) {
-                                // Update referance for the user, because then the list has been added
-                                // but courrent users holds an faulty reference
+                                // We get here if the list has already been added to the group, so  for the user 
+                                // I need to update the reference 
+                                // to this group list and remove the existing one
+                                console.log("DEBUG -- User myLists: ", user.myLists);
+                                user.myLists = user.myLists.filter(listId => listId.toString() !== existingList._id.toString());
+                                user.myLists.push(model._id);
+                                await List.findByIdAndDelete(existingList._id);
+                                await user.save();
+
+
                                 continue outerloop;
                             }
                         }
@@ -127,7 +135,7 @@ async function main() {
         console.log('Connected to the database');
 
         // Adjust the query as needed to fetch the desired users
-        const users = await User.find({ username: 'test' }); // Empty filter to find all users
+        const users = await User.find({ username: 'test2' }); // Empty filter to find all users
 
         // Call update functions
         await updateUsers(users);
