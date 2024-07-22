@@ -204,7 +204,7 @@ router.patch('/setlist/:id', async (req, res) => {
 router.patch('/addlist/:id', async (req, res) => {
   //console.log('Req body: ', req.body);
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate('myLists');
     if (!user) {
       return res.status(404).send();
     }
@@ -230,13 +230,16 @@ router.patch('/addlist/:id', async (req, res) => {
     const newListNew = new List({
       listName: nameLowerCase,
       owner: user._id,
-      // Add any other fields you need for the List model
     });
-    await newListNew.save(); // Save the new List document
-    user.myLists.push(newListNew._id); // Add the reference of the new list to user.myLists
+    await newListNew.save(); 
+    user.myLists.push(newListNew._id); 
     user.activeList = newListNew.listName;
-    await user.save(); // Save the user document with updates for both structures
-    res.send(user);
+    await user.save(); 
+    console.log("DEBUG -- AddList -- User: ", user);
+
+    const updatedUser = await User.findById(user._id).populate('myLists').exec();
+
+    res.send(updatedUser);
   } catch (error) {
     console.error('Error adding list', error);
     console.error('Error', error.message);
