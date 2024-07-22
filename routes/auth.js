@@ -64,7 +64,7 @@ router.get('/checkLogin', async (req, res) => {
 
         // Fetch the user from the database
         try {
-            const user = await User.findById(decoded.userId);
+            const user = await User.findById(decoded.userId).populate('myLists');
             if (!user) {
                 return res.json({ valid: false });
             }
