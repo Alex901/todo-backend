@@ -88,7 +88,7 @@ groupSchema.pre('save', async function(next) { // Notice: need to wait for add u
                 if (!user.groups.includes(this._id)) {
                     user.groups.push(this._id);
                 }
-                for(let list of this.groupLists) {
+                for(let list of this.groupLists) { //TODO: change this part to get correct reference
                     if(!user.listNames.includes(list)) {
                         user.listNames.push(list);
                     }

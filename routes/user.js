@@ -2,6 +2,7 @@ const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
 const Todo = require('../models/Todo');
+const List = require('../models/List');
 const multer = require('multer');
 const { Storage } = require('@google-cloud/storage');
 require('dotenv').config({ path: './config/.env' });
@@ -191,7 +192,8 @@ router.patch('/setlist/:id', async (req, res) => {
     console.error('Error', error.message);
   }
 });
-
+//TODO: remember group list case!!!!
+//Updated
 router.patch('/addlist/:id', async (req, res) => {
   console.log('Req body: ', req.body);
   try {
@@ -199,23 +201,42 @@ router.patch('/addlist/:id', async (req, res) => {
     if (!user) {
       return res.status(404).send();
     }
-    if (user.listNames.some(list => list.name === req.body.listName)) {
+    const nameLowerCase = req.body.listName.toLowerCase();
+    // Check if the list name already exists in the old data structure
+    const isListNameExistsInOldStructure = user.listNames.some(list => list.name === nameLowerCase);
+    // Check if the list name already exists in the new data structure
+    const isListNameExistsInNewStructure = await List.exists({ listName: nameLowerCase, owner: user._id });
+
+    if (isListNameExistsInOldStructure || isListNameExistsInNewStructure) {
       return res.status(400).send({ error: 'List name already exists' });
     }
-    const newList = {
-      name: req.body.listName,
+
+    // For the old data structure
+    const newListOld = {
+      name: nameLowerCase,
       tags: [],
       description: '',
     };
-    user.listNames.push(newList);
-    user.activeList = newList.name;
-    await user.save();
+    user.listNames.push(newListOld);
+
+    // For the new data structure
+    const newListNew = new List({
+      listName: nameLowerCase,
+      owner: user._id,
+      // Add any other fields you need for the List model
+    });
+    await newListNew.save(); // Save the new List document
+    user.myLists.push(newListNew._id); // Add the reference of the new list to user.myLists
+    user.activeList = newListNew.listName;
+    await user.save(); // Save the user document with updates for both structures
     res.send(user);
   } catch (error) {
     console.error('Error adding list', error);
     console.error('Error', error.message);
   }
 });
+
+
 
 router.delete('/deletelist/:id', async (req, res) => {
   try {

@@ -15,11 +15,13 @@ const listSchema = new mongoose.Schema({
         type: String,
         required: true,
         enum: ['userList', 'groupList'],
+        default: 'userList',
     },
     visibility: { //Is the list public or private
         type: String,
         required: true,
         enum: ['public', 'private'],
+        default: 'private',
     },
     entries: { //List entries
         type: Number, 
