@@ -17,28 +17,7 @@ const corsOptions = { //This is not nice
 router.post('/', async (req, res) => {
   try {
     // Extract data from the request body
-    const { id, task, isDone, created, completed, isStarted, started, owner, steps, priority, dueDate, description, isUrgent, inList, difficulty, estimatedTime, tags } = req.body;
-
-    // Create a new todo entry
-    const todo = new Todo({
-      id, 
-      task,
-      isDone,
-      created,
-      completed,
-      isStarted,
-      started,
-      owner,
-      steps,
-      priority,
-      dueDate,
-      description,
-      isUrgent, 
-      tags,
-      inList,
-      difficulty,
-      estimatedTime
-    });
+    const todo = new Todo(req.body);
     // Save the todo entry to the database
     await todo.save(); 
 
