@@ -57,6 +57,9 @@ async function updateTodos(users, ListModel) {
         for (const todo of todos) {
             // Initialize inListNew as an empty array to store multiple references
             todo.inListNew = [];
+            todo.ownerType
+            todo.owner = user._id;
+            
 
             // Assuming inList is an array of list names. If it's a delimited string, split it into an array first.
             const listNames = Array.isArray(todo.inList) ? todo.inList : todo.inList.split(','); // Adjust the split delimiter as necessary

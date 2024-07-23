@@ -231,10 +231,10 @@ router.patch('/addlist/:id', async (req, res) => {
       listName: nameLowerCase,
       owner: user._id,
     });
-    await newListNew.save(); 
-    user.myLists.push(newListNew._id); 
+    await newListNew.save();
+    user.myLists.push(newListNew._id);
     user.activeList = newListNew.listName;
-    await user.save(); 
+    await user.save();
     console.log("DEBUG -- AddList -- User: ", user);
 
     const updatedUser = await User.findById(user._id).populate('myLists').exec();
@@ -320,15 +320,21 @@ router.patch('/toggleurgent/:id', async (req, res) => {
 });
 
 router.patch('/addtag/:id', async (req, res) => {
+  const user = await User.findById(req.params.id).populate('myLists');
 
   try {
-    const user = await User.findById(req.params.id);
+
     if (!user) {
       return res.status(404).send('User not found');
     }
     const activeList = req.body.activeList;
+    const listNew = user.myLists.find(list => list.listName === activeList);
+    console.log("DEBUG -- AddTag -- ListNew: ", listNew);
     const list = user.listNames.find(list => list.name === activeList);
     if (!list) {
+      return res.status(404).send('List not found');
+    }
+    if (!listNew) {
       return res.status(404).send('List not found');
     }
 
@@ -339,10 +345,10 @@ router.patch('/addtag/:id', async (req, res) => {
       uses: 0
     };
 
-
-
+    console.log("DEBUG -- AddTag -- listNew.tags: ", listNew.tags);
+    listNew.tags.push(newTag);
+    await listNew.save();
     list.tags.push(newTag);
-    user.activeList = activeList;
 
     //IF i want to add all tags to "all" too, this is where i do it. 
 

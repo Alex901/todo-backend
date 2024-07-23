@@ -42,17 +42,14 @@ const listSchema = new mongoose.Schema({
                 },
                 color: {
                     type: String,
-                    required: true,
                     default: '#FFFFFF' // Default color is white
                 },
                 textColor: {
                     type: String,
-                    required: true,
                     default: '#000000' // Default text color is black
                 },
-                usages: {
+                uses: {
                     type: Number,
-                    required: true,
                     default: 0
             }
         },
