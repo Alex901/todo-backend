@@ -345,6 +345,14 @@ router.patch('/addtag/:id', async (req, res) => {
       uses: 0
     };
 
+    if (activeList !== 'all') {
+      const allList = user.myLists.find(list => list.listName === 'all');
+      if (allList) {
+        allList.tags.push(newTag);
+        await allList.save(); // Save the "all" list with the new tag
+      }
+    }
+
     console.log("DEBUG -- AddTag -- listNew.tags: ", listNew.tags);
     listNew.tags.push(newTag);
     await listNew.save();
@@ -363,26 +371,31 @@ router.patch('/addtag/:id', async (req, res) => {
 
 router.delete('/deletetag/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate('myLists');
     if (!user) {
       return res.status(404).send('User not found');
     }
+    console.log("DEBUUG -- req.body.tag", req.body.tag)
+    const tagId = req.body.tagId;
+    console.log("DEBUG -- tagId: ", tagId);
 
-    const activeList = req.body.activeList;
-    const tagName = req.body.tagName;
-
-    const list = user.listNames.find(list => list.name === activeList);
-    if (!list) {
-      return res.status(404).send('List not found');
+   for(const list of user.myLists){
+      console.log("DEBUG -- list: ", list);
+      for(tag of list.tags){
+        if(tag.uses > 0){
+          return res.status(409).json({ message: 'Tag is in use', uses: tag.uses });
+        }
+        if(tag._id == tagId || (tag.label === req.body.tag.label && tag.color === req.body.tag.color && tag.textColor === req.body.tag.textColor)){ //Find base tag
+          console.log("DEBUG -- tag: ", tag);
+          list.tags = list.tags.filter(tag => 
+            !(tag._id == tagId || (tag.label === req.body.tag.label && tag.color === req.body.tag.color && tag.textColor === req.body.tag.textColor))
+          );
+          console.log("DEBUG -- list.tags: ", list.tags);
+        }
+      }
+      await list.save();
     }
-
-    const tagIndex = list.tags.findIndex(tag => tag.label === tagName);
-    if (tagIndex === -1) {
-      return res.status(404).send('Tag not found');
-    }
-
-    list.tags.splice(tagIndex, 1);
-
+   
     await user.save();
 
     res.status(200).send(user);

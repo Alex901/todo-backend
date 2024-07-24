@@ -1,5 +1,6 @@
 const express = require('express');
-const Todo = require('../models/Todo'); 
+const Todo = require('../models/Todo');
+const List = require('../models/List');
 const logger = require('../middlewares/logger');
 const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
@@ -8,21 +9,42 @@ const cors = require('cors');
 const router = express.Router();
 
 const corsOptions = { //This is not nice
-  allowedHeaders: ['User', 'Content-Type'], 
+  allowedHeaders: ['User', 'Content-Type'],
   credentials: true,
 };
 
 
 // Route to store a new todo entry
 router.post('/', async (req, res) => {
+  console.log("req.body: ", req.body);
   try {
-    // Extract data from the request body
+    if (req.body.tags.length > 0) {
+      const tagNames = [];
+      for (tag of req.body.tags) {
+        tagNames.push(tag.label);
+      }
+      listsToUpdate = await List.find({ _id: { $in: req.body.inListNew } });
+      console.log("listsToUpdate: ", listsToUpdate);
+      for (const list of listsToUpdate) {
+        if (Array.isArray(list.tags)) {
+          for (const tag of list.tags) {
+            console.log("tag: ", tag);
+            // Check if the tag's name is in tagNames before incrementing uses
+            if (tagNames.includes(tag.label)) {
+              console.log("tagNames includes tag.label: ", tag.label);
+              tag.uses = tag.uses + 1; // Increment the uses only if the tag is in tagNames
+            }
+          }
+        }
+        await list.save();
+      }
+    }
+
     const todo = new Todo(req.body);
-    // Save the todo entry to the database
-    await todo.save(); 
-
-
+    await todo.save();
     res.status(201).json({ message: 'Todo entry created successfully', todo });
+
+
   } catch (error) {
     const errorMessage = error.message;
     const stackTrace = error.stack;
@@ -37,51 +59,51 @@ router.post('/', async (req, res) => {
 });
 
 // Fetch entries from database
-router.get('/todos', authenticate, async  (req, res) => {
+router.get('/todos', authenticate, async (req, res) => {
   console.log("req.query: ", req.query.groupLists);
-    try {
-      let entries;
-      if (req.user) {
-          // If a valid token was provided, return users entries
-          entries = await Todo.find({ owner: req.user.username }); //REMEMBER: observer and shared too
-      } else {
-          // If no token was provided, return limited entries: guest user
-          entries = await Todo.find({ inList: { $eq: [] } });
-      }
-
-      //await updateData(entries);
-
-      res.json(entries);
-    } catch(error) {
-        console.error('Error fetching entries', error);
-        res.status(500).json({ message: 'Internal server error' });
+  try {
+    let entries;
+    if (req.user) {
+      // If a valid token was provided, return users entries
+      entries = await Todo.find({ owner: req.user.username }); //REMEMBER: observer and shared too
+    } else {
+      // If no token was provided, return limited entries: guest user
+      entries = await Todo.find({ inList: { $eq: [] } });
     }
+
+    //await updateData(entries);
+
+    res.json(entries);
+  } catch (error) {
+    console.error('Error fetching entries', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 })
 
 router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
   console.log("mobile request works, hurray!!!");
   try {
-      let entries;
-      const username = req.headers['user'];
+    let entries;
+    const username = req.headers['user'];
 
-      if (username) {
-          // If a username was provided, return users entries
-          entries = await Todo.find({ owner: username });
-      } else {
-          // If no username was provided, return limited entries: guest user
-          entries = await Todo.find({ inList: { $eq: [] } });
-      }
+    if (username) {
+      // If a username was provided, return users entries
+      entries = await Todo.find({ owner: username });
+    } else {
+      // If no username was provided, return limited entries: guest user
+      entries = await Todo.find({ inList: { $eq: [] } });
+    }
 
-      res.json(entries);
-  } catch(error) {
-      console.error('Error fetching entries', error);
-      res.status(500).json({ message: 'Internal server error' });
+    res.json(entries);
+  } catch (error) {
+    console.error('Error fetching entries', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 router.patch('/done', async (req, res) => {
   console.log(req.body)
-  try{
+  try {
     const { taskId } = req.body;
 
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
@@ -89,31 +111,53 @@ router.patch('/done', async (req, res) => {
       completed: new Date()
     }, { new: true });
 
-    if(!updatedTodo){
-      return res.status(404).json({ message: 'Task not found'});
+    if (!updatedTodo) {
+      return res.status(404).json({ message: 'Task not found' });
     }
-    res.status(200).json({ message: 'Task marked as done successfully'});
-  } catch(error) {
+    res.status(200).json({ message: 'Task marked as done successfully' });
+  } catch (error) {
     console.error('Error setting task to done:', error);
-    res.status(500).json({ message: 'Internal server error '})
+    res.status(500).json({ message: 'Internal server error ' })
   }
 })
 
-router.delete('/delete/:taskId', async(req, res) => {
+router.delete('/delete/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  console.log("taskId: ", taskId);
-  try{
-    const entryToDelete = await Todo.findByIdAndDelete(taskId);
-    if(!entryToDelete){
-      return res.status(404).json({ message: 'Entry not found'})
+  try {
+    // Find the entry without deleting it first to get its tags
+    const entryToDelete = await Todo.findById(taskId);
+    if (!entryToDelete) {
+      return res.status(404).json({ message: 'Entry not found' });
     }
 
-    return res.status(200).json({ message: 'successfully deleted entry! '})
-  }catch(error) {
-    console.error("could not delete entry");
-    return res.status(500).json({ message: 'Internal server error'})
+    // Assuming entryToDelete.tags is an array of tag objects with a 'label' property
+    const tagLabels = entryToDelete.tags.map(tag => tag.label);
+
+    if (tagLabels.length > 0) {
+      const listsToUpdate = await List.find({ _id: { $in: entryToDelete.inListNew } });
+      console.log("listsToUpdate: ", listsToUpdate);
+
+      for (const list of listsToUpdate) {
+        if (Array.isArray(list.tags)) {
+          for (const tag of list.tags) {
+            if (tagLabels.includes(tag.label)) {
+              console.log("Decreasing uses for tag: ", tag.label);
+              tag.uses = Math.max(tag.uses - 1, 0); // Ensure uses doesn't go below 0
+            }
+          }
+          await list.save(); // Save each list after decrementing the tag uses
+        }
+      }
+    }
+
+    // Now delete the entry
+    await Todo.findByIdAndDelete(taskId);
+    return res.status(200).json({ message: 'Successfully deleted entry!' });
+  } catch (error) {
+    console.error("Could not delete entry", error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
-})
+});
 
 router.patch('/start', async (req, res) => {
   try {
@@ -147,7 +191,7 @@ const updateData = async (entries) => {
     }
   } catch (error) {
     console.error('Error updating data:', error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -156,9 +200,9 @@ router.patch('/start', async (req, res) => {
     const { taskId } = req.body;
 
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: true, 
-      started: new Date() 
-    }, { new: true }); 
+      isStarted: true,
+      started: new Date()
+    }, { new: true });
 
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
@@ -178,9 +222,9 @@ router.patch('/cancel', async (req, res) => {
     console.log("Start: Cancel task: taskId", taskId);
     // Update the task in the database
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: false, 
-      started: null 
-    }, { new: true }); 
+      isStarted: false,
+      started: null
+    }, { new: true });
 
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
@@ -213,7 +257,7 @@ router.patch('/edit', async (req, res) => {
 router.patch('/update', async (req, res) => {
   try {
     const update = req.body;
-    console.log("update: ", update);  
+    console.log("update: ", update);
     // Update all documents in the Todo collection
     await Todo.updateMany({}, update);
 
@@ -253,7 +297,7 @@ router.patch('/stepComplete', async (req, res) => {
 
 router.patch('/stepUncomplete', async (req, res) => {
   const { taskId, stepId } = req.body;
- // console.log("req.body: ", req.body)
+  // console.log("req.body: ", req.body)
   try {
     // Find the task by id
     const task = await Todo.findById(taskId);
