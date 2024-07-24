@@ -28,10 +28,15 @@ const listSchema = new mongoose.Schema({
         required: true,
         default: 0,
     },
-    owner: { //Who created the list and thus owns it, if it is a group list, the owner is the group
+    owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        required: true,
+        refPath: 'ownerModel'
+    },
+    ownerModel: {
+        type: String,
+        required: true,
+        enum: ['User', 'Group'], 
     },
     tags: {
         type: [
@@ -62,6 +67,15 @@ const listSchema = new mongoose.Schema({
     collection: 'Lists'
 });
 
+// Pre-save middleware to set ownerModel based on type
+listSchema.pre('validate', function(next) {
+    if (this.type === 'userList') {
+        this.ownerModel = 'User';
+    } else if (this.type === 'groupList') {
+        this.ownerModel = 'Group';
+    }
+    next();
+});
 
 const List = mongoose.model('List', listSchema);
 
