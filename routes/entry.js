@@ -65,13 +65,10 @@ router.get('/todos', authenticate, async (req, res) => {
     let entries;
     if (req.user) {
       // If a valid token was provided, return users entries
-      entries = await Todo.find({ owner: req.user.username }).populate('inListNew'); //REMEMBER: observer and shared too
-    } else {
-      // If no token was provided, return limited entries: guest user
-      entries = await Todo.find({ inList: { $eq: [] } });
-    }
+      entries = await Todo.find({ owner: req.user._id }).populate('inListNew'); //REMEMBER: observer and shared too
+    } 
 
-    //await updateData(entries);
+    console.log("entries: ", entries);
 
     res.json(entries);
   } catch (error) {

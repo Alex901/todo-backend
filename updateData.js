@@ -138,7 +138,7 @@ async function main() {
         console.log('Connected to the database');
 
         // Adjust the query as needed to fetch the desired users
-        const users = await User.find({ username: 'test2' }); // Empty filter to find all users
+        const users = await User.find({ username: 'Alzner' }); // Empty filter to find all users
 
         // Call update functions
         await updateUsers(users);
