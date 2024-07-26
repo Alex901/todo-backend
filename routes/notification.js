@@ -10,7 +10,7 @@ router.get('/', authenticate, async (req, res) => {
     console.log('User: ', req.user._id);
     try {
         const notifications = await Notification.find({ to: req.user._id });
-        console.log('Notifications: ', notifications);
+        //console.log('Notifications: ', notifications);
 
         if (notifications.length === 0) {
             return res.status(200).send({ message: 'No notifications found' });

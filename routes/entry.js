@@ -65,7 +65,12 @@ router.get('/todos', authenticate, async (req, res) => {
     let entries;
     if (req.user) {
       // If a valid token was provided, return users entries
-      entries = await Todo.find({ owner: req.user._id }).populate('inListNew'); //REMEMBER: observer and shared too
+      entries = await Todo.find({
+    $or: [
+        { owner: req.user._id },
+        { owner: { $in: req.user.groups } }
+    ]
+}).populate('inListNew'); //REMEMBER: observer and shared too
     }
 
     res.json(entries);
@@ -79,6 +84,7 @@ router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
   console.log("mobile request works, hurray!!!");
   try {
     let entries;
+    console.log("req.headers: ", req.headers.user);
     const username = req.headers['user'];
 
     if (username) {
