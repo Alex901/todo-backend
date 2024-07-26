@@ -328,13 +328,12 @@ router.patch('/addtag/:id', async (req, res) => {
       return res.status(404).send('User not found');
     }
     const activeList = req.body.activeList;
-    const listNew = user.myLists.find(list => list.listName === activeList);
-    console.log("DEBUG -- AddTag -- ListNew: ", listNew);
-    const list = user.listNames.find(list => list.name === activeList);
-    if (!list) {
+    const listToAddTagToo = user.myLists.find(list => list.listName === activeList);
+    console.log("DEBUG -- AddTag -- list to add tag too: ", listToAddTagToo);
+    if (!listToAddTagToo) {
       return res.status(404).send('List not found');
     }
-    if (!listNew) {
+    if (!listToAddTagToo) {
       return res.status(404).send('List not found');
     }
 
@@ -345,7 +344,7 @@ router.patch('/addtag/:id', async (req, res) => {
       uses: 0
     };
 
-    if (activeList !== 'all') {
+    if (activeList !== 'all' && listToAddTagToo.type === 'userList') {
       const allList = user.myLists.find(list => list.listName === 'all');
       if (allList) {
         allList.tags.push(newTag);
@@ -353,14 +352,9 @@ router.patch('/addtag/:id', async (req, res) => {
       }
     }
 
-    console.log("DEBUG -- AddTag -- listNew.tags: ", listNew.tags);
-    listNew.tags.push(newTag);
-    await listNew.save();
-    list.tags.push(newTag);
-
-    //IF i want to add all tags to "all" too, this is where i do it. 
-
-    await user.save();
+    console.log("DEBUG -- AddTag -- listNew.tags: ", listToAddTagToo.tags);
+    listToAddTagToo.tags.push(newTag);
+    await listToAddTagToo.save();
 
     res.status(200).send(user);
   } catch (error) {

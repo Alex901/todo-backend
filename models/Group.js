@@ -81,13 +81,15 @@ const groupSchema = new mongoose.Schema({
 
 groupSchema.pre('save', async function(next) {
     // Lazy load User model to avoid circular dependency
+    console.log('Group Model pre save -- updating lists for users in group');
     const User = require('./User');
 
     if (this.isModified('members')) {
         for (let member of this.members) {
             const user = await User.findById(member.member_id);
             if (user) {
-                //console.log(user); // Log the user to inspect its contents
+                //console.log(user); 
+                // Log the user to inspect its contents
                 if (!user.groups.includes(this._id)) {
                     user.groups.push(this._id);
                 }

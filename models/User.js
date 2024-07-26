@@ -126,9 +126,7 @@ const userSchema = new mongoose.Schema(
     },
     activeList: {
       type: String,
-      default: function () {
-        return this.listNames[0].name;
-      }
+      default: 'all',
     },
     settings: {
 
