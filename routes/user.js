@@ -303,7 +303,7 @@ router.delete('/deletelist/:id', async (req, res) => {
 
 router.patch('/toggleurgent/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate('myLists').populate('groups');
     if (!user) {
       return res.status(404).send({ error: 'User not found' });
     }
