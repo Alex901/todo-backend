@@ -79,18 +79,22 @@ const groupSchema = new mongoose.Schema({
     timestamps: true
 });
 
-groupSchema.pre('save', async function(next) { // Notice: need to wait for add user implementation for further testing, but it looks like it works as intended
-    
+groupSchema.pre('save', async function(next) {
+    // Lazy load User model to avoid circular dependency
+    const User = require('./User');
+
     if (this.isModified('members')) {
         for (let member of this.members) {
             const user = await User.findById(member.member_id);
             if (user) {
+                //console.log(user); // Log the user to inspect its contents
                 if (!user.groups.includes(this._id)) {
                     user.groups.push(this._id);
                 }
-                for(let list of this.groupLists) { //TODO: change this part to get correct reference
-                    if(!user.listNames.includes(list)) {
-                        user.listNames.push(list);
+                for (let list of this.groupListsModel) {
+                    //console.log(list); // Log the list to inspect its contents
+                    if (!user.myLists.includes(list._id ? list._id : list)) {
+                        user.myLists.push(list._id ? list._id : list);
                     }
                 }
                 await user.save();

@@ -141,8 +141,8 @@ async function main() {
         const users = await User.find({ username: 'Alzner' }); // Empty filter to find all users
 
         // Call update functions
-        await updateUsers(users);
-        await updateTodos(users, List);
+       // await updateUsers(users);
+       // await updateTodos(users, List);
         await updateGroups(users); // Uncomment when updateGroups is implemented
 
         console.log('Update process completed.');

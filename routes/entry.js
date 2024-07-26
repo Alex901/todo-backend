@@ -60,15 +60,13 @@ router.post('/', async (req, res) => {
 
 // Fetch entries from database
 router.get('/todos', authenticate, async (req, res) => {
-  console.log("req.query: ", req.query.groupLists);
+  console.log("\x1b[31mDEBUG\x1b[0m: req.body: ", req.user);
   try {
     let entries;
     if (req.user) {
       // If a valid token was provided, return users entries
       entries = await Todo.find({ owner: req.user._id }).populate('inListNew'); //REMEMBER: observer and shared too
-    } 
-
-    console.log("entries: ", entries);
+    }
 
     res.json(entries);
   } catch (error) {

@@ -2,17 +2,41 @@ const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
 const Group = require('../models/Group');
+const List = require('../models/List');
 
 const router = express.Router();
 
 router.post('/create', authenticate, async (req, res) => {
     try {
         const groupData = req.body;
+
+        // Create a new group
         const newGroup = new Group(groupData);
+
+
+        // Save the new group to get its _id
+        const savedGroup = await newGroup.save();
+
+        // Create a new list with the group's _id as the owner
+        const newList = new List({
+            listName: req.body.listName,
+            description: "",
+            type: "groupList",
+            visibility: "private",
+            owner: savedGroup._id,
+            ownerModel: "Group",
+            tags: []
+        });
+
+        // Save the new list
+        const savedList = await newList.save();
+
         newGroup.members.push({ member_id: groupData.owner, role: "moderator" });
-        newGroup.groupLists.push({ name: req.body.listName, tags: [], description: "" });
-        await newGroup.save();
-        res.status(201).json(newGroup);
+        // Update the group with the list's _id
+        savedGroup.groupListsModel.push(savedList._id);
+        await savedGroup.save();
+
+        res.status(201).json(savedGroup);
     } catch (error) {
         console.error('Error creating group', error);
         res.status(500).send('Internal server error');
@@ -22,7 +46,7 @@ router.post('/create', authenticate, async (req, res) => {
 router.get('/getGroups/:userId', authenticate, async (req, res) => {
     try {
         const userId = req.params.userId;
-        const groups = await Group.find({ 'members.member_id': userId });
+        const groups = await Group.find({ 'members.member_id': userId }).populate("groupListsModel");
         res.status(200).json(groups);
     } catch (error) {
         console.error('Error fetching groups', error);

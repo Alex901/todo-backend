@@ -25,6 +25,9 @@ router.get('/', authenticate, async (req, res) => {
 
 router.post('/groupinvite', authenticate, async (req, res) => {
     const { from, to, groupId } = req.body;
+    console.log('From: ', from);
+    console.log('To: ', to);
+    console.log('Group: ', groupId);
 
     try {
         // Create a new Notification document
