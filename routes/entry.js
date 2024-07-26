@@ -60,7 +60,7 @@ router.post('/', async (req, res) => {
 
 // Fetch entries from database
 router.get('/todos', authenticate, async (req, res) => {
-  console.log("\x1b[31mDEBUG\x1b[0m: req.body: ", req.user);
+  //console.log("\x1b[31mDEBUG\x1b[0m: req.body: ", req.user);
   try {
     let entries;
     if (req.user) {

@@ -375,19 +375,17 @@ router.delete('/deletetag/:id', async (req, res) => {
     if (!user) {
       return res.status(404).send('User not found');
     }
-    console.log("DEBUUG -- req.body.tag", req.body.tag)
-    const tagId = req.body.tagId;
-    console.log("DEBUG -- tagId: ", tagId);
+    console.log("\x1b[31mDEBUG\x1b[0m -- tag to delete: ", req.body.tag);
+    const tagId = req.body.tag._id;
 
-   for(const list of user.myLists){
-      console.log("DEBUG -- list: ", list);
-      for(tag of list.tags){
-        if(tag.uses > 0){
-          return res.status(409).json({ message: 'Tag is in use', uses: tag.uses });
-        }
-        if(tag._id == tagId || (tag.label === req.body.tag.label && tag.color === req.body.tag.color && tag.textColor === req.body.tag.textColor)){ //Find base tag
-          console.log("DEBUG -- tag: ", tag);
-          list.tags = list.tags.filter(tag => 
+    for (const list of user.myLists) {
+      for (tag of list.tags) {
+        if (tag._id == tagId || (tag.label === req.body.tag.label && tag.color === req.body.tag.color && tag.textColor === req.body.tag.textColor)) { //Find base tag
+          console.log("\x1b[31mDEBUG\x1b[0m -- tag found: ", tag);
+          if (tag.uses > 0) {
+            return res.status(409).json({ message: 'Tag is in use', uses: tag.uses });
+          }
+          list.tags = list.tags.filter(tag =>
             !(tag._id == tagId || (tag.label === req.body.tag.label && tag.color === req.body.tag.color && tag.textColor === req.body.tag.textColor))
           );
           console.log("DEBUG -- list.tags: ", list.tags);
@@ -395,7 +393,7 @@ router.delete('/deletetag/:id', async (req, res) => {
       }
       await list.save();
     }
-   
+
     await user.save();
 
     res.status(200).send(user);

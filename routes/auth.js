@@ -19,7 +19,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Check if the user exists
-        const user = await User.findOne({ username: req.body.username });
+        const user = await User.findOne({ username: req.body.username }).populate('myLists').populate('groups');
         if (!user) {
             console.log('User not found');
             return res.status(404).send({ error: 'User not found' });
@@ -64,7 +64,7 @@ router.get('/checkLogin', async (req, res) => {
 
         // Fetch the user from the database
         try {
-            const user = await User.findById(decoded.userId).populate('myLists');
+            const user = await User.findById(decoded.userId).populate('myLists').populate('groups');
             if (!user) {
                 return res.json({ valid: false });
             }
