@@ -59,7 +59,7 @@ async function updateTodos(users, ListModel) {
             todo.inListNew = [];
             todo.ownerType
             todo.owner = user._id;
-            
+
 
             // Assuming inList is an array of list names. If it's a delimited string, split it into an array first.
             const listNames = Array.isArray(todo.inList) ? todo.inList : todo.inList.split(','); // Adjust the split delimiter as necessary
@@ -131,6 +131,24 @@ async function updateGroups(users) {
     }
 }
 
+async function updateEstTimes(users) {
+    for (const user of users) {
+        // Fetch todos for the user
+        const todos = await Todo.find({ owner: user._id });
+
+        for (const todo of todos) {
+
+            // Multiply the estimated time by 60
+            if (todo.estimatedTime > 0) {
+                console.log(`Updating estimated time for todo ${todo._id}`);
+                todo.estimatedTime *= 60;
+            }
+            // Save the updated todo
+            await todo.save();
+        }
+    }
+}
+
 
 async function main() {
     try {
@@ -141,9 +159,10 @@ async function main() {
         const users = await User.find({ username: 'Alzner' }); // Empty filter to find all users
 
         // Call update functions
-       // await updateUsers(users);
-       // await updateTodos(users, List);
-        await updateGroups(users); // Uncomment when updateGroups is implemented
+        // await updateUsers(users);
+        // await updateTodos(users, List);
+        // await updateGroups(users); // Uncomment when updateGroups is implemented
+        await updateEstTimes(users);
 
         console.log('Update process completed.');
     } catch (err) {

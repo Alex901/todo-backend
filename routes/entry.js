@@ -164,50 +164,22 @@ router.patch('/start', async (req, res) => {
   try {
     const { taskId } = req.body;
 
-    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: true,
-      started: new Date()
-    }, { new: true });
+    // Fetch the document first
+    const todo = await Todo.findById(taskId);
 
-    if (!updatedTodo) {
+    if (!todo) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    res.status(200).json({ message: 'Task marked as started successfully' });
-  } catch (error) {
-    console.error('Error setting task as started:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
+    // Update the fields
+    todo.isStarted = true;
+    todo.started = new Date();
 
-//Helper to update data when needed
-const updateData = async (entries) => {
-  try {
-    for (let entry of entries) {
-      if (!entry.isStarted || !entry.started) {
-        await Todo.findByIdAndUpdate(entry._id, { $set: { isStarted: false, started: null } });
-        entry.isStarted = false;
-        entry.started = null;
-      }
-    }
-  } catch (error) {
-    console.error('Error updating data:', error);
-    throw error;
-  }
-};
+    // Manually increment the __v field
+    todo.__v += 1;
 
-router.patch('/start', async (req, res) => {
-  try {
-    const { taskId } = req.body;
-
-    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: true,
-      started: new Date()
-    }, { new: true });
-
-    if (!updatedTodo) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
+    // Save the document, which will increment the __v field
+    await todo.save();
 
     res.status(200).json({ message: 'Task marked as started successfully' });
   } catch (error) {
@@ -224,12 +196,15 @@ router.patch('/cancel', async (req, res) => {
     // Update the task in the database
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
       isStarted: false,
-      started: null
+      started: null,
+      $inc: { __v: 1 }
     }, { new: true });
 
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
     }
+
+    updatedTodo.save();
 
     res.status(200).json({ message: 'Task canceled successfully' });
   } catch (error) {
@@ -247,6 +222,9 @@ router.patch('/edit', async (req, res) => {
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    updatedTodo.__v += 1;
+
+    await updatedTodo.save();
 
     res.status(200).json({ message: 'Task updated successfully', updatedTodo });
   } catch (error) {
