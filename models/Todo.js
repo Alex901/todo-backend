@@ -77,7 +77,12 @@ const todoSchema = new mongoose.Schema({
     tags: {
         type: [{}],
         default: []
+    }, 
+    totalTimeSpent: {
+        type: Number,
+        default: 0
     }
+
 }, {
     collection: 'Offline-entries',
     timestamps: true

@@ -28,10 +28,8 @@ router.post('/', async (req, res) => {
       for (const list of listsToUpdate) {
         if (Array.isArray(list.tags)) {
           for (const tag of list.tags) {
-            console.log("tag: ", tag);
             // Check if the tag's name is in tagNames before incrementing uses
             if (tagNames.includes(tag.label)) {
-              console.log("tagNames includes tag.label: ", tag.label);
               tag.uses = tag.uses + 1; // Increment the uses only if the tag is in tagNames
             }
           }
@@ -103,24 +101,36 @@ router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
 });
 
 router.patch('/done', async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
   try {
     const { taskId } = req.body;
 
-    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isDone: true,
-      completed: new Date()
-    }, { new: true });
+    // Fetch the document first
+    const todo = await Todo.findById(taskId);
 
-    if (!updatedTodo) {
+    if (!todo) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    res.status(200).json({ message: 'Task marked as done successfully' });
+
+    // Calculate the time difference
+    const currentTime = new Date().getTime();
+    const timeSpent = currentTime - new Date(todo.started).getTime();
+    const totalTimeSpent = todo.totalTimeSpent + timeSpent;
+
+    // Update the fields
+    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
+      isDone: true,
+      completed: new Date(),
+      $inc: { __v: 1 },
+      totalTimeSpent: totalTimeSpent
+    }, { new: true });
+
+    res.status(200).json({ message: 'Task marked as done successfully', updatedTodo });
   } catch (error) {
     console.error('Error setting task to done:', error);
-    res.status(500).json({ message: 'Internal server error ' })
+    res.status(500).json({ message: 'Internal server error' });
   }
-})
+});
 
 router.delete('/delete/:taskId', async (req, res) => {
   const { taskId } = req.params;
@@ -190,23 +200,29 @@ router.patch('/start', async (req, res) => {
 
 router.patch('/cancel', async (req, res) => {
   try {
-    // Extract taskId from the request body
     const { taskId } = req.body;
-    console.log("Start: Cancel task: taskId", taskId);
-    // Update the task in the database
-    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
-      isStarted: false,
-      started: null,
-      $inc: { __v: 1 }
-    }, { new: true });
 
-    if (!updatedTodo) {
+    // Fetch the document first
+    const todo = await Todo.findById(taskId);
+
+    if (!todo) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    updatedTodo.save();
+    // Calculate the time difference
+    const currentTime = new Date().getTime();
+    const timeSpent = currentTime - new Date(todo.started).getTime();
+    const totalTimeSpent = todo.totalTimeSpent + timeSpent;
 
-    res.status(200).json({ message: 'Task canceled successfully' });
+    // Update the fields
+    const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
+      isStarted: false,
+      started: null,
+      $inc: { __v: 1 },
+      totalTimeSpent: totalTimeSpent
+    }, { new: true });
+
+    res.status(200).json({ message: 'Task canceled and time tracked successfully', updatedTodo });
   } catch (error) {
     console.error('Error canceling task:', error);
     res.status(500).json({ message: 'Internal server error' });
