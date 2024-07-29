@@ -78,7 +78,7 @@ const todoSchema = new mongoose.Schema({
         type: [{}],
         default: []
     }, 
-    totalTimeSpent: {
+    totalTimeSpent: { //this is a bad name
         type: Number,
         default: 0
     }
@@ -88,6 +88,27 @@ const todoSchema = new mongoose.Schema({
     timestamps: true
 }
 );
+
+todoSchema.pre('save', function(next) {
+  this.steps.forEach((step, index) => {
+    if (step.id === undefined || step.id === null) {
+      step.id = index+1;
+    }
+  });
+  next();
+});
+
+todoSchema.pre('findOneAndUpdate', function(next) {
+    const update = this.getUpdate();
+    if (update.steps) {
+      update.steps.forEach((step, index) => {
+        if (step.id === undefined || step.id === null) {
+          step.id = index+1;
+        }
+      });
+    }
+    next();
+  });
 
 const Todo = mongoose.model('Todo', todoSchema);
 

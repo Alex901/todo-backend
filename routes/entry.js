@@ -233,14 +233,15 @@ router.patch('/edit', async (req, res) => {
   try {
     const { taskId, updatedTask } = req.body;
 
-    const updatedTodo = await Todo.findByIdAndUpdate(taskId, updatedTask, { new: true });
+    const updatedTodo = await Todo.findOneAndUpdate(
+      { _id: taskId },
+      updatedTask,
+      { new: true, runValidators: true }
+    );
 
     if (!updatedTodo) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    updatedTodo.__v += 1;
-
-    await updatedTodo.save();
 
     res.status(200).json({ message: 'Task updated successfully', updatedTodo });
   } catch (error) {
