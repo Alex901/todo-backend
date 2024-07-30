@@ -10,10 +10,10 @@ const connectDB = async () => {
                 dbName = 'todoDatabase';
                 break;
             case 'production':
-                dbName = 'habbitForge';
+                dbName = 'habitForge';
                 break;
             case 'test':
-                dbName = 'habbitForgeTest';
+                dbName = 'habitForgeTest';
                 break;
             default:
                 throw new Error('Unknown NODE_ENV value');

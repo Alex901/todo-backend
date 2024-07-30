@@ -14,7 +14,82 @@ const corsOptions = { //This is not nice
 };
 
 
-// Route to store a new todo entry
+/**
+ * @swagger
+ * /:
+ *   post:
+ *     summary: Create a new todo entry
+ *     description: Creates a new todo entry and updates the usage count of associated tags in the specified lists.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Buy groceries"
+ *               description:
+ *                 type: string
+ *                 example: "Milk, Bread, Cheese"
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     label:
+ *                       type: string
+ *                       example: "Shopping"
+ *               inListNew:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *     responses:
+ *       201:
+ *         description: Todo entry created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Todo entry created successfully"
+ *                 todo:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: "60d0fe4f5311236168a109ca"
+ *                     title:
+ *                       type: string
+ *                       example: "Buy groceries"
+ *                     description:
+ *                       type: string
+ *                       example: "Milk, Bread, Cheese"
+ *                     tags:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           label:
+ *                             type: string
+ *                             example: "Shopping"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.post('/', async (req, res) => {
   console.log("req.body: ", req.body);
   try {
@@ -56,21 +131,72 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Fetch entries from database
+/**
+ * @swagger
+ * /todos:
+ *   get:
+ *     summary: Retrieve a list of todo entries
+ *     description: Fetches todo entries for the authenticated user, including entries owned by the user or shared with the user's groups.
+ *     tags:
+ *       - Todo
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of todo entries
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *                   title:
+ *                     type: string
+ *                     example: "Buy groceries"
+ *                   description:
+ *                     type: string
+ *                     example: "Milk, Bread, Cheese"
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         label:
+ *                           type: string
+ *                           example: "Shopping"
+ *                   inListNew:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                       example: "60d0fe4f5311236168a109ca"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.get('/todos', authenticate, async (req, res) => {
   //console.log("\x1b[31mDEBUG\x1b[0m: req.body: ", req.user);
   try {
-    let entries;
+    let entries = [];
     if (req.user) {
       // If a valid token was provided, return users entries
       entries = await Todo.find({
-    $or: [
-        { owner: req.user._id },
-        { owner: { $in: req.user.groups } }
-    ]
-}).populate('inListNew'); //REMEMBER: observer and shared too
+        $or: [
+          { owner: req.user._id },
+          { owner: { $in: req.user.groups } }
+        ]
+      }).populate('inListNew'); //REMEMBER: observer and shared too
     }
-
     res.json(entries);
   } catch (error) {
     console.error('Error fetching entries', error);
@@ -78,6 +204,64 @@ router.get('/todos', authenticate, async (req, res) => {
   }
 })
 
+/**
+ * @swagger
+ * /todos/mobile:
+ *   get:
+ *     summary: Retrieve a list of todo entries for mobile
+ *     description: Fetches todo entries for the user specified in the request headers. If no user is specified, returns limited entries for a guest user.
+ *     tags:
+ *       - Todo
+ *     parameters:
+ *       - in: header
+ *         name: user
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: The username to fetch todo entries for
+ *     responses:
+ *       200:
+ *         description: A list of todo entries
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *                   title:
+ *                     type: string
+ *                     example: "Buy groceries"
+ *                   description:
+ *                     type: string
+ *                     example: "Milk, Bread, Cheese"
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         label:
+ *                           type: string
+ *                           example: "Shopping"
+ *                   inList:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                       example: "60d0fe4f5311236168a109ca"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
   console.log("mobile request works, hurray!!!");
   try {
@@ -100,6 +284,78 @@ router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /done:
+ *   patch:
+ *     summary: Mark a task as done
+ *     description: Updates a task to mark it as done and calculates the total time spent on the task.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               taskId:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109ca"
+ *     responses:
+ *       200:
+ *         description: Task marked as done successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task marked as done successfully"
+ *                 updatedTodo:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: "60d0fe4f5311236168a109ca"
+ *                     title:
+ *                       type: string
+ *                       example: "Buy groceries"
+ *                     description:
+ *                       type: string
+ *                       example: "Milk, Bread, Cheese"
+ *                     isDone:
+ *                       type: boolean
+ *                       example: true
+ *                     completed:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2023-10-01T12:34:56.789Z"
+ *                     totalTimeSpent:
+ *                       type: number
+ *                       example: 3600000
+ *       404:
+ *         description: Task not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/done', async (req, res) => {
   console.log(req.body);
   try {
@@ -132,6 +388,53 @@ router.patch('/done', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /delete/{taskId}:
+ *   delete:
+ *     summary: Delete a task
+ *     description: Deletes a task and updates the usage count of associated tags in lists.
+ *     tags:
+ *       - Todo
+ *     parameters:
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the task to delete
+ *     responses:
+ *       200:
+ *         description: Successfully deleted entry
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully deleted entry!"
+ *       404:
+ *         description: Entry not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Entry not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.delete('/delete/:taskId', async (req, res) => {
   const { taskId } = req.params;
   try {
@@ -160,8 +463,6 @@ router.delete('/delete/:taskId', async (req, res) => {
         }
       }
     }
-
-    // Now delete the entry
     await Todo.findByIdAndDelete(taskId);
     return res.status(200).json({ message: 'Successfully deleted entry!' });
   } catch (error) {
@@ -170,6 +471,57 @@ router.delete('/delete/:taskId', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /start:
+ *   patch:
+ *     summary: Mark a task as started
+ *     description: Updates a task to mark it as started and sets the start date.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               taskId:
+ *                 type: string
+ *                 description: The ID of the task to mark as started
+ *                 example: "60d21b4667d0d8992e610c85"
+ *     responses:
+ *       200:
+ *         description: Task marked as started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task marked as started successfully"
+ *       404:
+ *         description: Task not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/start', async (req, res) => {
   try {
     const { taskId } = req.body;
@@ -198,6 +550,60 @@ router.patch('/start', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /cancel:
+ *   patch:
+ *     summary: Cancel a task and track time spent
+ *     description: Updates a task to mark it as canceled and calculates the total time spent on the task.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               taskId:
+ *                 type: string
+ *                 description: The ID of the task to cancel
+ *                 example: "60d21b4667d0d8992e610c85"
+ *     responses:
+ *       200:
+ *         description: Task canceled and time tracked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task canceled and time tracked successfully"
+ *                 updatedTodo:
+ *                   type: object
+ *                   description: The updated task object
+ *       404:
+ *         description: Task not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/cancel', async (req, res) => {
   try {
     const { taskId } = req.body;
@@ -229,6 +635,64 @@ router.patch('/cancel', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /edit:
+ *   patch:
+ *     summary: Edit a task
+ *     description: Updates a task with the provided details.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               taskId:
+ *                 type: string
+ *                 description: The ID of the task to update
+ *                 example: "60d21b4667d0d8992e610c85"
+ *               updatedTask:
+ *                 type: object
+ *                 description: The updated task details
+ *                 example: { "title": "New Task Title", "description": "Updated description" }
+ *     responses:
+ *       200:
+ *         description: Task updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task updated successfully"
+ *                 updatedTodo:
+ *                   type: object
+ *                   description: The updated task object
+ *       404:
+ *         description: Task not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/edit', async (req, res) => {
   try {
     const { taskId, updatedTask } = req.body;
@@ -250,6 +714,45 @@ router.patch('/edit', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /update:
+ *   patch:
+ *     summary: Update all tasks
+ *     description: Updates all tasks in the Todo collection with the provided details.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: The update details to apply to all tasks
+ *             example: { "status": "completed" }
+ *     responses:
+ *       200:
+ *         description: All entries updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "All entries updated successfully"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+//This endpoint is some early stage shinanigans and should be removed at some point
 router.patch('/update', async (req, res) => {
   try {
     const update = req.body;
@@ -264,6 +767,61 @@ router.patch('/update', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /stepComplete:
+ *   patch:
+ *     summary: Mark a step as completed
+ *     description: Marks a specific step in a task as completed.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               taskId:
+ *                 type: string
+ *                 description: The ID of the task
+ *                 example: "60d21b4667d0d8992e610c85"
+ *               stepId:
+ *                 type: string
+ *                 description: The ID of the step to mark as completed
+ *                 example: "60d21b4667d0d8992e610c86"
+ *     responses:
+ *       200:
+ *         description: Step marked as done successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Step marked as done successfully"
+ *       404:
+ *         description: Task or step not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/stepComplete', async (req, res) => {
   const { taskId, stepId } = req.body;
 
@@ -291,6 +849,61 @@ router.patch('/stepComplete', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /stepUncomplete:
+ *   patch:
+ *     summary: Mark a step as uncompleted
+ *     description: Marks a specific step in a task as uncompleted.
+ *     tags:
+ *       - Todo
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               taskId:
+ *                 type: string
+ *                 description: The ID of the task
+ *                 example: "60d21b4667d0d8992e610c85"
+ *               stepId:
+ *                 type: string
+ *                 description: The ID of the step to mark as uncompleted
+ *                 example: "60d21b4667d0d8992e610c86"
+ *     responses:
+ *       200:
+ *         description: Step marked as undone successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Step marked as undone successfully"
+ *       404:
+ *         description: Task or step not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Task not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/stepUncomplete', async (req, res) => {
   const { taskId, stepId } = req.body;
   // console.log("req.body: ", req.body)

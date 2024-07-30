@@ -7,7 +7,6 @@ const Notification = require('../models/Notification');
 const router = express.Router();
 
 router.get('/', authenticate, async (req, res) => {
-    console.log('User: ', req.user._id);
     try {
         const notifications = await Notification.find({ to: req.user._id });
         //console.log('Notifications: ', notifications);

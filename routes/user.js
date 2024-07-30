@@ -51,7 +51,7 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
 
     try {
-      const user = await User.findById(req.params.id);
+      const user = await User.findById(req.params.id).populate('myLists').populate('groups');
       if (!user) {
         return res.status(404).send('User not found');
       }

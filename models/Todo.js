@@ -84,7 +84,7 @@ const todoSchema = new mongoose.Schema({
     }
 
 }, {
-    collection: 'Offline-entries',
+    collection: 'Entries',
     timestamps: true
 }
 );
