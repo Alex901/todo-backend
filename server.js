@@ -14,12 +14,13 @@ const cors = require('cors');
 const morgan = require('morgan'); //testing different loggers
 const path = require('path');
 const cookieParser = require('cookie-parser');
-const { authenticate } = require('./middlewares/auth');
-const { group } = require('console');
+const swaggerSetup = require('./swagger');
+
 
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'access.log'), { flags: 'a' });
 
 const app = express();
+swaggerSetup(app);
 const PORT = process.env.PORT || 5000;
 const allowOrigins = [
     'https://the-task-forge.netlify.app',
