@@ -399,4 +399,24 @@ router.delete('/deletetag/:id', async (req, res) => {
   }
 });
 
+router.patch('/toggledetails/:id', async (req, res) => {
+  try {
+      const userId = req.params.id;
+      const { "settings.todoList.showDetails": newShowDetailsStatus } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      user.settings.todoList.showListDetails = newShowDetailsStatus;
+      await user.save();
+
+      res.status(200).json(user);
+  } catch (error) {
+      console.error('Error toggling show details setting', error);
+      res.status(500).send('Internal server error');
+  }
+});
+
 module.exports = router;
