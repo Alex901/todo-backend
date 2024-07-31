@@ -4,13 +4,20 @@ const app = require('../server.js'); // Adjust the path to your app
 const Todo = require('../models/Todo'); // Adjust the path to your Todo model
 const List = require('../models/List'); // Adjust the path to your List model
 
+beforeEach(async () => {
+  // Setup: Create necessary data before each test
+  await User.create({ username: 'testuser', password: 'password' });
+  await List.create({ name: 'Test List', tags: [{ label: 'urgent', uses: 0 }] });
+});
+
 describe('POST /', () => {
   it('should create a new todo entry successfully', async () => {
     const newTodo = {
       title: 'Test Todo',
       description: 'This is a test todo',
       tags: [],
-      inListNew: []
+      inListNew: [],
+      owner: 'testuser'
     };
 
     const res = await request(app)

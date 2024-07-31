@@ -10,7 +10,6 @@ const stepSchema = new mongoose.Schema({
 const todoSchema = new mongoose.Schema({
     id: {
         type: Number,
-        required: true
     },
     task: {
         type: String,
@@ -89,6 +88,7 @@ const todoSchema = new mongoose.Schema({
 }
 );
 
+//Makes sure that step.id exists
 todoSchema.pre('save', function(next) {
   this.steps.forEach((step, index) => {
     if (step.id === undefined || step.id === null) {

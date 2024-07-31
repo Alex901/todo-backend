@@ -166,6 +166,8 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
+    await List.deleteMany({ owner: req.params.id, type: 'userList' }); //Delete all user's lists
+    await Todo.deleteMany({ owner: req.params.id }); //delete all entries for the user
     if (!user) {
       return res.status(404).send();
     }

@@ -140,12 +140,14 @@ const userSchema = new mongoose.Schema(
         urgentOnly: {
           type: Boolean,
           default: false,
-
         },
         deadlineOnly: {
           type: Boolean,
           default: false,
-
+        },
+        showListDetails: {
+          type: Boolean,
+          default: false,
         },
       }
     }

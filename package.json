@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -r esm tests/*.test.js",
+    "test": "cross-env NODE_ENV=test mocha -r esm --timeout 10000 tests/*.test.js --exit",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -30,6 +30,7 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "mocha": "^10.3.0",
     "nodemon": "^3.1.0",
