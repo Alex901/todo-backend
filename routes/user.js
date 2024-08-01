@@ -180,7 +180,7 @@ router.delete('/:id', async (req, res) => {
 // PATCH /users/set-active-list - Set the active list for a user
 // Updated
 router.patch('/setlist/:id', async (req, res) => {
-  console.log('Req body: ', req.body);
+  //console.log('Req body: ', req.body);
   try {
     const user = await User.findByIdAndUpdate(req.params.id, { activeList: req.body.activeList.name }, { new: true }).populate('myLists');
     if (!user) {
@@ -252,7 +252,7 @@ router.patch('/addlist/:id', async (req, res) => {
 //TODO: Remember the group case !!!
 // Updated(except group) 
 router.delete('/deletelist/:id', async (req, res) => {
-  console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
+ // console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
   try {
     const user = await User.findById(req.params.id);
     //console.log("User: ", user);

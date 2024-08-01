@@ -189,7 +189,7 @@ router.get('/todos', authenticate, async (req, res) => {
   try {
     let entries = [];
     if (req.user) {
-      console.log("req.user: ", req.user);
+      //console.log("req.user: ", req.user);
       // If a valid token was provided, return users entries
       entries = await Todo.find({
         $or: [

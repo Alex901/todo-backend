@@ -6,6 +6,76 @@ const List = require('../models/List');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /group/create:
+ *   post:
+ *     summary: Create a new group
+ *     description: Creates a new group and an associated list with the group's ID as the owner.
+ *     tags:
+ *       - Group
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Study Group"
+ *               owner:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109ca"
+ *               listName:
+ *                 type: string
+ *                 example: "Group Tasks"
+ *     responses:
+ *       201:
+ *         description: Group created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 name:
+ *                   type: string
+ *                   example: "Study Group"
+ *                 owner:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 groupListsModel:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *                 members:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       member_id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109ca"
+ *                       role:
+ *                         type: string
+ *                         example: "moderator"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.post('/create', authenticate, async (req, res) => {
     try {
         const groupData = req.body;
@@ -43,6 +113,69 @@ router.post('/create', authenticate, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /group/getGroups/{userId}:
+ *   get:
+ *     summary: Get groups for a user
+ *     description: Fetches all groups that a user is a member of.
+ *     tags:
+ *       - Group
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     responses:
+ *       200:
+ *         description: A list of groups
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *                   name:
+ *                     type: string
+ *                     example: "Study Group"
+ *                   owner:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *                   groupListsModel:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                       example: "60d0fe4f5311236168a109ca"
+ *                   members:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         member_id:
+ *                           type: string
+ *                           example: "60d0fe4f5311236168a109ca"
+ *                         role:
+ *                           type: string
+ *                           example: "member"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.get('/getGroups/:userId', authenticate, async (req, res) => {
     try {
         const userId = req.params.userId;
@@ -54,6 +187,69 @@ router.get('/getGroups/:userId', authenticate, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /group/addUser/{groupId}:
+ *   put:
+ *     summary: Add a user to a group
+ *     description: Adds a user to a specified group.
+ *     tags:
+ *       - Group
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the group
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *     responses:
+ *       200:
+ *         description: User added to group
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "User added to group"
+ *       400:
+ *         description: User is already a member of the group
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "User is already a member of the group"
+ *       404:
+ *         description: Group not found
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Group not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.put('/addUser/:groupId', authenticate, async (req, res) => {
     try {
         const groupId = req.params.groupId;

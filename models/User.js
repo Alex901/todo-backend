@@ -159,6 +159,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.post('save', function(doc, next) {
+  console.log("Entering new user post save")
   if (doc.__v === 0) { // Check if the document is new
     const defaultLists = [
       { listName: 'all', tags: [], description: '', type: 'userList', visibility: 'private', owner: doc._id },
