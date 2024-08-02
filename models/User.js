@@ -137,11 +137,19 @@ const userSchema = new mongoose.Schema(
           default: 'Created',
 
         },
+        ascending: {
+          type: Boolean,
+          default: true,
+        },
         urgentOnly: {
           type: Boolean,
           default: false,
         },
         deadlineOnly: {
+          type: Boolean,
+          default: false,
+        },
+        newOnly: {
           type: Boolean,
           default: false,
         },

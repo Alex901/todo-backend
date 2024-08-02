@@ -419,4 +419,34 @@ router.patch('/toggledetails/:id', async (req, res) => {
   }
 });
 
+router.patch('/update-todo-settings/:id', async (req, res) => {
+  try {
+      const userId = req.params.id;
+      const { settingName, value } = req.body;
+
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Update the specified setting
+      if (user.settings.todoList.hasOwnProperty(settingName)) {
+          user.settings.todoList[settingName] = value;
+      } else {
+          return res.status(400).json({ message: 'Invalid setting name' });
+      }
+
+      await user.save();
+
+      res.status(200).json(user);
+  } catch (error) {
+      console.error('Error updating settings', error);
+      res.status(500).send('Internal server error');
+  }
+});
+
+module.exports = router;
+
+
+
 module.exports = router;
