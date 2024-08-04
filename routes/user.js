@@ -25,11 +25,81 @@ const storage = new Storage({
 
 const bucket = storage.bucket(process.env.GOOGLE_CLOUD_BUCKET_NAME);
 
+/**
+ * @swagger
+ * /auth:
+ *   get:
+ *     summary: Authenticate user
+ *     description: Returns a welcome message for the authenticated user.
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Welcome message for the authenticated user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Welcome johndoe"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ */
 router.get('/auth', authenticate, (req, res) => {
   res.json({ message: `Welcome ${req.user.username}` });
 });
 
-//Update profile picture
+router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'), async (req, res) => {
+  console.log("Service Account ", serviceAccount);
+  if (!req.file) {
+    res.status(400).send('No file uploaded.');
+    return;
+  }
+
+  // Create a new blob in the bucket and upload the file data to the blob
+  const blob = bucket.file(req.file.originalname);
+  const blobStream = blob.createWriteStream();
+
+  blobStream.on('error', err => {
+    console.error('Error uploading file', err);
+    res.status(500).send('Internal server error');
+  });
+
+  blobStream.on('finish', async () => {
+    // The file upload is complete
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+
+    try {
+      const user = await User.findById(req.params.id).populate('myLists').populate('groups');
+      if (!user) {
+        return res.status(404).send('User not found');
+      }
+
+      user.profilePicture = publicUrl;
+
+      await user.save();
+
+      res.status(200).send(user);
+    } catch (error) {
+      console.error('Error updating profile picture', error);
+      res.status(500).send('Internal server error');
+    }
+  });
+
+  blobStream.end(req.file.buffer);
+});
 router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'), async (req, res) => {
   console.log("Service Account ", serviceAccount);
   if (!req.file) {
@@ -70,7 +140,68 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
   blobStream.end(req.file.buffer);
 });
 
-// POST /users/create - Create a new user
+/**
+ * @swagger
+ * /create:
+ *   post:
+ *     summary: Create a new user
+ *     description: Creates a new user with the provided username and other details.
+ *     tags:
+ *       - User
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: "johndoe"
+ *               password:
+ *                 type: string
+ *                 example: "password123"
+ *               email:
+ *                 type: string
+ *                 example: "johndoe@example.com"
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 email:
+ *                   type: string
+ *                   example: "johndoe@example.com"
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Username is required"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.post('/create', async (req, res) => {
   //  console.log("Req body: ", req.body);
   try {
@@ -95,7 +226,49 @@ router.post('/create', async (req, res) => {
   }
 });
 
-// GET /users/getall - Get all users
+/**
+ * @swagger
+ * /getall:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieves a list of all users.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: username
+ *         schema:
+ *           type: string
+ *         description: Optional username to filter users (currently not used in the implementation)
+ *     responses:
+ *       200:
+ *         description: A list of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109ca"
+ *                   username:
+ *                     type: string
+ *                     example: "johndoe"
+ *                   email:
+ *                     type: string
+ *                     example: "johndoe@example.com"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.get('/getall', authenticate, async (req, res) => {
   try {
     const username = req.query.username;
@@ -107,7 +280,67 @@ router.get('/getall', authenticate, async (req, res) => {
   }
 });
 
-// GET /users/:id - Get a specific user by their ID
+/**
+ * @swagger
+ * /{username}:
+ *   get:
+ *     summary: Get user by username
+ *     description: Retrieves a user by their username and populates their lists.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The username of the user
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 email:
+ *                   type: string
+ *                   example: "johndoe@example.com"
+ *                 myLists:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109cb"
+ *                       name:
+ *                         type: string
+ *                         example: "Shopping List"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.get('/:username', async (req, res) => {
   console.log('Username: ', req.params.username);
   try {
@@ -123,7 +356,89 @@ router.get('/:username', async (req, res) => {
   }
 });
 
-// PATCH /users/edituser/:id - Update a specific user by their ID
+/**
+ * @swagger
+ * /edituser/{id}:
+ *   patch:
+ *     summary: Edit user details
+ *     description: Updates user details including password if old and new passwords are provided.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userData:
+ *                 type: object
+ *                 description: The user data to update
+ *                 example: 
+ *                   email: "newemail@example.com"
+ *                   username: "newusername"
+ *               oldPassword:
+ *                 type: string
+ *                 description: The current password of the user
+ *                 example: "oldpassword123"
+ *               newPassword:
+ *                 type: string
+ *                 description: The new password for the user
+ *                 example: "newpassword123"
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "newusername"
+ *                 email:
+ *                   type: string
+ *                   example: "newemail@example.com"
+ *       401:
+ *         description: Old password is incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Old password is incorrect"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.patch('/edituser/:id', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -146,12 +461,9 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
     }
 
     // console.log("userData: ", userData);
-    console.log("User pre: ", user);
-    console.log("User data pre: ", userData);
     // Update the user data
     Object.assign(user, userData);
-    console.log("User post: ", user);
-    console.log("User data post: ", userData);
+
 
     // Save the updated user
     const updatedUser = await user.save();
@@ -162,7 +474,56 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
   }
 });
 
-// DELETE /users/:id - Delete a specific user by their ID
+/**
+ * @swagger
+ * /{id}:
+ *   delete:
+ *     summary: Delete user
+ *     description: Deletes a user by their ID, along with all their lists and todos.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 email:
+ *                   type: string
+ *                   example: "johndoe@example.com"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.delete('/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
@@ -177,8 +538,80 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// PATCH /users/set-active-list - Set the active list for a user
-// Updated
+/**
+ * @swagger
+ * /setlist/{id}:
+ *   patch:
+ *     summary: Set active list for user
+ *     description: Updates the active list for the user by their ID.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               activeList:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     example: "Shopping List"
+ *     responses:
+ *       200:
+ *         description: Active list set successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 activeList:
+ *                   type: string
+ *                   example: "Shopping List"
+ *                 myLists:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109cb"
+ *                       listName:
+ *                         type: string
+ *                         example: "Shopping List"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.patch('/setlist/:id', async (req, res) => {
   //console.log('Req body: ', req.body);
   try {
@@ -201,8 +634,89 @@ router.patch('/setlist/:id', async (req, res) => {
     console.error('Error', error.message);
   }
 });
+
+/**
+ * @swagger
+ * /addlist/{id}:
+ *   patch:
+ *     summary: Add a new list to the user
+ *     description: Adds a new list to the user's lists and sets it as the active list.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               listName:
+ *                 type: string
+ *                 example: "Shopping List"
+ *     responses:
+ *       200:
+ *         description: List added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 activeList:
+ *                   type: string
+ *                   example: "shopping list"
+ *                 myLists:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109cb"
+ *                       listName:
+ *                         type: string
+ *                         example: "shopping list"
+ *       400:
+ *         description: List name already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "List name already exists"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 //TODO: remember group list case!!!!
-//Updated
 router.patch('/addlist/:id', async (req, res) => {
   //console.log('Req body: ', req.body);
   try {
@@ -250,7 +764,87 @@ router.patch('/addlist/:id', async (req, res) => {
 
 
 //TODO: Remember the group case !!!
-// Updated(except group) 
+/**
+ * @swagger
+ * /deletelist/{id}:
+ *   delete:
+ *     summary: Delete a list from the user
+ *     description: Deletes a list from the user's lists and updates the active list.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               listName:
+ *                 type: string
+ *                 example: "Shopping List"
+ *     responses:
+ *       200:
+ *         description: List deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 activeList:
+ *                   type: string
+ *                   example: "shopping list"
+ *                 myLists:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109cb"
+ *                       listName:
+ *                         type: string
+ *                         example: "shopping list"
+ *       400:
+ *         description: Invalid list name or list name does not exist
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid list name"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.delete('/deletelist/:id', async (req, res) => {
  // console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
   try {
@@ -303,6 +897,75 @@ router.delete('/deletelist/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /toggleurgent/{id}:
+ *   patch:
+ *     summary: Toggle urgent only setting for user's todo list
+ *     description: Updates the 'urgentOnly' setting for the user's todo list.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               settings.todoList.urgentOnly:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Urgent only setting updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 settings:
+ *                   type: object
+ *                   properties:
+ *                     todoList:
+ *                       type: object
+ *                       properties:
+ *                         urgentOnly:
+ *                           type: boolean
+ *                           example: true
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
 router.patch('/toggleurgent/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate('myLists').populate('groups');
@@ -321,6 +984,100 @@ router.patch('/toggleurgent/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /addtag/{id}:
+ *   patch:
+ *     summary: Add a tag to a user's list
+ *     description: Adds a new tag to the specified list in the user's lists.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               activeList:
+ *                 type: string
+ *                 example: "Shopping List"
+ *               tagName:
+ *                 type: string
+ *                 example: "Urgent"
+ *               tagColor:
+ *                 type: string
+ *                 example: "#FF0000"
+ *               textColor:
+ *                 type: string
+ *                 example: "#FFFFFF"
+ *     responses:
+ *       200:
+ *         description: Tag added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 myLists:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109cb"
+ *                       listName:
+ *                         type: string
+ *                         example: "Shopping List"
+ *                       tags:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             label:
+ *                               type: string
+ *                               example: "Urgent"
+ *                             color:
+ *                               type: string
+ *                               example: "#FF0000"
+ *                             textColor:
+ *                               type: string
+ *                               example: "#FFFFFF"
+ *                             uses:
+ *                               type: number
+ *                               example: 0
+ *       404:
+ *         description: User or list not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.patch('/addtag/:id', async (req, res) => {
   const user = await User.findById(req.params.id).populate('myLists');
 
@@ -365,6 +1122,116 @@ router.patch('/addtag/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /deletetag/{id}:
+ *   delete:
+ *     summary: Delete a tag from a user's lists
+ *     description: Deletes a tag from all lists in the user's lists if it is not in use.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               tag:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "60d0fe4f5311236168a109cb"
+ *                   label:
+ *                     type: string
+ *                     example: "Urgent"
+ *                   color:
+ *                     type: string
+ *                     example: "#FF0000"
+ *                   textColor:
+ *                     type: string
+ *                     example: "#FFFFFF"
+ *     responses:
+ *       200:
+ *         description: Tag deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 myLists:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         example: "60d0fe4f5311236168a109cb"
+ *                       listName:
+ *                         type: string
+ *                         example: "Shopping List"
+ *                       tags:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             label:
+ *                               type: string
+ *                               example: "Urgent"
+ *                             color:
+ *                               type: string
+ *                               example: "#FF0000"
+ *                             textColor:
+ *                               type: string
+ *                               example: "#FFFFFF"
+ *                             uses:
+ *                               type: number
+ *                               example: 0
+ *       404:
+ *         description: User or list not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "User not found"
+ *       409:
+ *         description: Tag is in use
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Tag is in use"
+ *                 uses:
+ *                   type: number
+ *                   example: 5
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.delete('/deletetag/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate('myLists');
@@ -399,6 +1266,72 @@ router.delete('/deletetag/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /toggledetails/{id}:
+ *   patch:
+ *     summary: Toggle show details setting for user's todo list
+ *     description: Updates the 'showListDetails' setting for the user's todo list.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               settings.todoList.showDetails:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Show details setting updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 settings:
+ *                   type: object
+ *                   properties:
+ *                     todoList:
+ *                       type: object
+ *                       properties:
+ *                         showListDetails:
+ *                           type: boolean
+ *                           example: true
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.patch('/toggledetails/:id', async (req, res) => {
   try {
       const userId = req.params.id;
@@ -419,6 +1352,85 @@ router.patch('/toggledetails/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /update-todo-settings/{id}:
+ *   patch:
+ *     summary: Update a specific setting in the user's todo list settings
+ *     description: Updates a specific setting in the user's todo list settings.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               settingName:
+ *                 type: string
+ *                 example: "showListDetails"
+ *               value:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Setting updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "60d0fe4f5311236168a109ca"
+ *                 username:
+ *                   type: string
+ *                   example: "johndoe"
+ *                 settings:
+ *                   type: object
+ *                   properties:
+ *                     todoList:
+ *                       type: object
+ *                       properties:
+ *                         showListDetails:
+ *                           type: boolean
+ *                           example: true
+ *       400:
+ *         description: Invalid setting name
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid setting name"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
 router.patch('/update-todo-settings/:id', async (req, res) => {
   try {
       const userId = req.params.id;
@@ -444,9 +1456,5 @@ router.patch('/update-todo-settings/:id', async (req, res) => {
       res.status(500).send('Internal server error');
   }
 });
-
-module.exports = router;
-
-
 
 module.exports = router;
