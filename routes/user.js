@@ -3,6 +3,7 @@ const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
 const Todo = require('../models/Todo');
 const List = require('../models/List');
+const Group = require('../models/Group');
 const multer = require('multer');
 const { Storage } = require('@google-cloud/storage');
 require('dotenv').config({ path: './config/.env' });
@@ -478,8 +479,8 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  * @swagger
  * /{id}:
  *   delete:
- *     summary: Delete user
- *     description: Deletes a user by their ID, along with all their lists and todos.
+ *     summary: Delete a user and their associated data
+ *     description: Deletes a user, their lists, todos, and handles group membership. If the user is the only member of a group, the group is deleted. Otherwise, the user is removed from the group.
  *     tags:
  *       - User
  *     parameters:
@@ -488,10 +489,10 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the user
+ *         description: The ID of the user to delete
  *     responses:
  *       200:
- *         description: User deleted successfully
+ *         description: User and associated data deleted successfully
  *         content:
  *           application/json:
  *             schema:
@@ -503,9 +504,6 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  *                 username:
  *                   type: string
  *                   example: "johndoe"
- *                 email:
- *                   type: string
- *                   example: "johndoe@example.com"
  *       404:
  *         description: User not found
  *         content:
@@ -519,16 +517,30 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  *       500:
  *         description: Internal server error
  *         content:
- *           text/plain:
+ *           application/json:
  *             schema:
  *               type: string
  *               example: "Internal server error"
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const userId = req.params.id;
+    const user = await User.findByIdAndDelete(userId);
     await List.deleteMany({ owner: req.params.id, type: 'userList' }); //Delete all user's lists
     await Todo.deleteMany({ owner: req.params.id }); //delete all entries for the user
+    
+    const groups = await Group.find({ members: userId });
+    for (const group of groups) {
+      if (group.members.length === 1) {
+        // If the user is the only member, remove the group
+        await Group.findByIdAndDelete(group._id);
+      } else {
+        // Otherwise, remove the user from the group
+        group.members = group.members.filter(member => member.toString() !== userId);
+        await group.save();
+      }
+    }
+
     if (!user) {
       return res.status(404).send();
     }

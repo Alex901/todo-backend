@@ -34,7 +34,7 @@ const notificationSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-        expires: 60 * 60 * 24 * 7 // This document will be removed 7 days after it's created
+        expires: 60 * 60 * 24 * 30 // This document will be removed 7 days after it's created
     },
 
 }, {

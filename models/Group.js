@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('./User');
+const List = require('./List');
 
 const groupSchema = new mongoose.Schema({
     name: {
@@ -73,13 +73,13 @@ const groupSchema = new mongoose.Schema({
             },
         }],
     }
-}, 
-{
-    collection: 'Groups',
-    timestamps: true
-});
+},
+    {
+        collection: 'Groups',
+        timestamps: true
+    });
 
-groupSchema.pre('save', async function(next) {
+groupSchema.pre('save', async function (next) {
     // Lazy load User model to avoid circular dependency
     console.log('Group Model pre save -- updating lists for users in group');
     const User = require('./User');
@@ -103,6 +103,19 @@ groupSchema.pre('save', async function(next) {
             }
         }
     }
+    next();
+});
+
+groupSchema.pre('save', async function (next) {
+    if (this.members.length === 0) {
+        await this.remove();
+    }
+    next();
+});
+
+groupSchema.pre('remove', async function (next) {
+    const List = require('./List');
+    await List.deleteMany({ owner: this._id });
     next();
 });
 
