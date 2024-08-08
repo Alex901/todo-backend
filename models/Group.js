@@ -106,12 +106,6 @@ groupSchema.pre('save', async function (next) {
     next();
 });
 
-groupSchema.pre('save', async function (next) {
-    if (this.members.length === 0) {
-        await this.remove();
-    }
-    next();
-});
 
 groupSchema.pre('remove', async function (next) {
     const List = require('./List');

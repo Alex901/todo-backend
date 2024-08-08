@@ -6,6 +6,69 @@ const Notification = require('../models/Notification');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /notifications:
+ *   get:
+ *     summary: Get notifications for the authenticated user
+ *     description: Fetches all notifications for the authenticated user.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of notifications or a message indicating no notifications found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: No notifications found
+ *                 notifications:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ * components:
+ *   schemas:
+ *     Notification:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           example: 60d0fe4f5311236168a109ca
+ *         to:
+ *           type: string
+ *           example: 60d0fe4f5311236168a109cb
+ *         message:
+ *           type: string
+ *           example: "You have a new message"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2021-06-21T14:48:00.000Z
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2021-06-21T14:48:00.000Z
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 router.get('/', authenticate, async (req, res) => {
     try {
         const notifications = await Notification.find({ to: req.user._id });
@@ -22,6 +85,60 @@ router.get('/', authenticate, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /groupinvite:
+ *   post:
+ *     summary: Send a group invite notification
+ *     description: Sends a notification to invite a user to a group.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               from:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109ca"
+ *               to:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109cb"
+ *               groupId:
+ *                 type: string
+ *                 example: "60d0fe4f5311236168a109cc"
+ *     responses:
+ *       200:
+ *         description: Invite sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invite sent successfully
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 router.post('/groupinvite', authenticate, async (req, res) => {
     const { from, to, groupId } = req.body;
     console.log('From: ', from);
@@ -52,6 +169,71 @@ router.post('/groupinvite', authenticate, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /delete/{id}:
+ *   delete:
+ *     summary: Delete a notification
+ *     description: Deletes a notification by its ID.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the notification to delete
+ *     responses:
+ *       200:
+ *         description: Notification deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Notification deleted successfully
+ *       403:
+ *         description: You do not have permission to delete this notification
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: You do not have permission to delete this notification
+ *       404:
+ *         description: Notification not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Notification not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 router.delete('/delete/:id', authenticate, async (req, res) => {
     try {
         const notification = await Notification.findById(req.params.id);
