@@ -456,5 +456,100 @@ router.put('/updateGroupInfo/:id', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /leaveGroup/{groupId}:
+ *   put:
+ *     summary: Leave a group
+ *     description: Removes a user from a group and updates the user's list of groups.
+ *     tags:
+ *       - Group
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the group to leave.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     description: The ID of the user.
+ *                     example: "60d0fe4f5311236168a109ca"
+ *     responses:
+ *       200:
+ *         description: Left group successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Left group successfully"
+ *       404:
+ *         description: Group or user not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Group not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.put('/leaveGroup/:groupId', async (req, res) => {
+    const groupId = req.params.groupId;
+    const { user } = req.body;
+
+    try {
+        // Find the group and remove the member
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).send({ message: 'Group not found' });
+        }
+
+        console.log(group);
+
+        group.members = group.members.filter(member => member.member_id.toString() !== user._id);
+        await group.save();
+
+        // Find the user and remove the lists from the group
+        const userRecord = await User.findById(user._id);
+        if (!userRecord) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        if (Array.isArray(userRecord.myLists) && Array.isArray(group.groupListsModel)) {
+            userRecord.myLists = userRecord.myLists.filter(list => !group.groupListsModel.includes(list.toString()));
+        }
+        await userRecord.save();
+
+        res.status(200).send({ message: 'Left group successfully' });
+    } catch (error) {
+        console.error('Error leaving group: ', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
 
 module.exports = router;

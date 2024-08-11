@@ -106,7 +106,7 @@ async function updateGroups(users) {
                                 // We get here if the list has already been added to the group, so  for the user 
                                 // I need to update the reference 
                                 // to this group list and remove the existing one
-                                console.log("DEBUG -- User myLists: ", user.myLists);
+                                // console.log("DEBUG -- User myLists: ", user.myLists);
                                 user.myLists = user.myLists.filter(listId => listId.toString() !== existingList._id.toString());
                                 user.myLists.push(model._id);
                                 await List.findByIdAndDelete(existingList._id);

@@ -528,7 +528,7 @@ router.delete('/:id', async (req, res) => {
     const user = await User.findByIdAndDelete(userId);
     await List.deleteMany({ owner: req.params.id, type: 'userList' }); //Delete all user's lists
     await Todo.deleteMany({ owner: req.params.id }); //delete all entries for the user
-    
+
     const groups = await Group.find({ members: userId });
     for (const group of groups) {
       if (group.members.length === 1) {
@@ -763,7 +763,7 @@ router.patch('/addlist/:id', async (req, res) => {
     user.myLists.push(newListNew._id);
     user.activeList = newListNew.listName;
     await user.save();
-    console.log("DEBUG -- AddList -- User: ", user);
+    // console.log("DEBUG -- AddList -- User: ", user);
 
     const updatedUser = await User.findById(user._id).populate('myLists').exec();
 
@@ -858,7 +858,7 @@ router.patch('/addlist/:id', async (req, res) => {
  *               example: "Internal server error"
  */
 router.delete('/deletelist/:id', async (req, res) => {
- // console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
+  // console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
   try {
     const user = await User.findById(req.params.id);
     //console.log("User: ", user);
@@ -872,11 +872,11 @@ router.delete('/deletelist/:id', async (req, res) => {
     // New functionality for the updated data model
     if (user.myLists && Array.isArray(user.myLists) && user.myLists.length > 0) {
       await user.populate('myLists');
-      console.log("DEBUG -- DeleteList -- User._id: ", user._id);
-      console.log("DEBUG -- DeleteList -- User.myLists: ", user.myLists);
+      // console.log("DEBUG -- DeleteList -- User._id: ", user._id);
+      // console.log("DEBUG -- DeleteList -- User.myLists: ", user.myLists);
       const listToDelete = await List.findOne({ listName: req.body.listName, owner: user._id });
       if (listToDelete) {
-        console.log("DEBUG -- DeleteList --List to delete: ", listToDelete);
+        // console.log("DEBUG -- DeleteList --List to delete: ", listToDelete);
         await List.deleteOne({ _id: listToDelete._id });
 
         // Update the user's myLists by filtering out the deleted list's ID
@@ -1100,7 +1100,7 @@ router.patch('/addtag/:id', async (req, res) => {
     }
     const activeList = req.body.activeList;
     const listToAddTagToo = user.myLists.find(list => list.listName === activeList);
-    console.log("DEBUG -- AddTag -- list to add tag too: ", listToAddTagToo);
+    // console.log("DEBUG -- AddTag -- list to add tag too: ", listToAddTagToo);
     if (!listToAddTagToo) {
       return res.status(404).send('List not found');
     }
@@ -1123,7 +1123,7 @@ router.patch('/addtag/:id', async (req, res) => {
       }
     }
 
-    console.log("DEBUG -- AddTag -- listNew.tags: ", listToAddTagToo.tags);
+    // console.log("DEBUG -- AddTag -- listNew.tags: ", listToAddTagToo.tags);
     listToAddTagToo.tags.push(newTag);
     await listToAddTagToo.save();
 
@@ -1263,7 +1263,7 @@ router.delete('/deletetag/:id', async (req, res) => {
           list.tags = list.tags.filter(tag =>
             !(tag._id == tagId || (tag.label === req.body.tag.label && tag.color === req.body.tag.color && tag.textColor === req.body.tag.textColor))
           );
-          console.log("DEBUG -- list.tags: ", list.tags);
+          // console.log("DEBUG -- list.tags: ", list.tags);
         }
       }
       await list.save();
@@ -1346,21 +1346,21 @@ router.delete('/deletetag/:id', async (req, res) => {
  */
 router.patch('/toggledetails/:id', async (req, res) => {
   try {
-      const userId = req.params.id;
-      const { "settings.todoList.showDetails": newShowDetailsStatus } = req.body;
+    const userId = req.params.id;
+    const { "settings.todoList.showDetails": newShowDetailsStatus } = req.body;
 
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(404).json({ message: 'User not found' });
-      }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-      user.settings.todoList.showListDetails = newShowDetailsStatus;
-      await user.save();
+    user.settings.todoList.showListDetails = newShowDetailsStatus;
+    await user.save();
 
-      res.status(200).json(user);
+    res.status(200).json(user);
   } catch (error) {
-      console.error('Error toggling show details setting', error);
-      res.status(500).send('Internal server error');
+    console.error('Error toggling show details setting', error);
+    res.status(500).send('Internal server error');
   }
 });
 
@@ -1445,27 +1445,27 @@ router.patch('/toggledetails/:id', async (req, res) => {
  */
 router.patch('/update-todo-settings/:id', async (req, res) => {
   try {
-      const userId = req.params.id;
-      const { settingName, value } = req.body;
+    const userId = req.params.id;
+    const { settingName, value } = req.body;
 
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(404).json({ message: 'User not found' });
-      }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-      // Update the specified setting
-      if (user.settings.todoList.hasOwnProperty(settingName)) {
-          user.settings.todoList[settingName] = value;
-      } else {
-          return res.status(400).json({ message: 'Invalid setting name' });
-      }
+    // Update the specified setting
+    if (user.settings.todoList.hasOwnProperty(settingName)) {
+      user.settings.todoList[settingName] = value;
+    } else {
+      return res.status(400).json({ message: 'Invalid setting name' });
+    }
 
-      await user.save();
+    await user.save();
 
-      res.status(200).json(user);
+    res.status(200).json(user);
   } catch (error) {
-      console.error('Error updating settings', error);
-      res.status(500).send('Internal server error');
+    console.error('Error updating settings', error);
+    res.status(500).send('Internal server error');
   }
 });
 
