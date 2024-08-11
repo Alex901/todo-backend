@@ -275,4 +275,186 @@ router.put('/addUser/:groupId', authenticate, async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /fetchAllGroups:
+ *   get:
+ *     summary: Fetch all groups
+ *     description: Retrieves all groups with their owners and members' emails.
+ *     tags:
+ *       - Group
+ *     responses:
+ *       200:
+ *         description: A list of groups
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     description: The ID of the group.
+ *                   name:
+ *                     type: string
+ *                     description: The name of the group.
+ *                   description:
+ *                     type: string
+ *                     description: The description of the group.
+ *                   visibility:
+ *                     type: string
+ *                     description: The visibility of the group.
+ *                     enum: [private, public]
+ *                   owner:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         description: The ID of the owner.
+ *                       name:
+ *                         type: string
+ *                         description: The name of the owner.
+ *                   members:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         member_id:
+ *                           type: object
+ *                           properties:
+ *                             _id:
+ *                               type: string
+ *                               description: The ID of the member.
+ *                             email:
+ *                               type: string
+ *                               description: The email of the member.
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/fetchAllGroups', async (req, res) => {
+    try {
+        const groups = await Group.find().populate("owner").populate({
+            path: 'members.member_id',
+            select: 'email'
+        });
+        res.status(200).send(groups);
+    } catch (error) {
+        console.error('Error fetching all groups: ', error);
+        if (error.stack) {
+            console.error(error.stack);
+        }
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+
+/**
+ * @swagger
+ * /updateGroupInfo/{id}:
+ *   put:
+ *     summary: Update group information
+ *     description: Updates the information of a group by its ID.
+ *     tags:
+ *       - Group
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the group to update.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: The name of the group.
+ *                 example: "New Group Name"
+ *               description:
+ *                 type: string
+ *                 description: The description of the group.
+ *                 example: "Updated Description"
+ *               visibility:
+ *                 type: string
+ *                 description: The visibility of the group.
+ *                 enum: [private, public]
+ *                 example: "public"
+ *     responses:
+ *       200:
+ *         description: Group updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   description: The ID of the group.
+ *                 name:
+ *                   type: string
+ *                   description: The name of the group.
+ *                 description:
+ *                   type: string
+ *                   description: The description of the group.
+ *                 visibility:
+ *                   type: string
+ *                   description: The visibility of the group.
+ *                   enum: [private, public]
+ *       404:
+ *         description: Group not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Group not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.put('/updateGroupInfo/:id', async (req, res) => {
+    const groupId = req.params.id;
+    const { name, description, visibility } = req.body;
+
+    try {
+        const updatedGroup = await Group.findByIdAndUpdate(
+            groupId,
+            { name, description, visibility },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedGroup) {
+            return res.status(404).send({ message: 'Group not found' });
+        }
+
+        res.status(200).send(updatedGroup);
+    } catch (error) {
+        console.error('Error updating group: ', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+
 module.exports = router;

@@ -6,6 +6,11 @@ const groupSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    visibility: {
+        type: String,
+        default: 'private',
+        enum: ['private', 'public']
+    },
     description: {
         type: String,
         default: ''
@@ -73,6 +78,7 @@ const groupSchema = new mongoose.Schema({
             },
         }],
     }
+
 },
     {
         collection: 'Groups',
