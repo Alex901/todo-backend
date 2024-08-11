@@ -1,6 +1,85 @@
 const mongoose = require('mongoose');
 const List = require('./List');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Group:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: The name of the group.
+ *           example: "Study Group"
+ *         visibility:
+ *           type: string
+ *           description: The visibility of the group.
+ *           enum: [private, public]
+ *           example: "private"
+ *         description:
+ *           type: string
+ *           description: The description of the group.
+ *           example: "A group for study sessions"
+ *         owner:
+ *           type: string
+ *           description: The ID of the user who owns the group.
+ *           example: "60d0fe4f5311236168a109ca"
+ *         members:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               member_id:
+ *                 type: string
+ *                 description: The ID of the member.
+ *                 example: "60d0fe4f5311236168a109cb"
+ *               role:
+ *                 type: string
+ *                 description: The role of the member in the group.
+ *                 enum: [edit, observer, moderator]
+ *                 example: "edit"
+ *         groupListsModel:
+ *           type: array
+ *           items:
+ *             type: string
+ *             description: The ID of the list.
+ *             example: "60d0fe4f5311236168a109cc"
+ *         groupLists:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: The name of the list.
+ *                 example: "To-Do List"
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     label:
+ *                       type: string
+ *                       description: The label of the tag.
+ *                       example: "Urgent"
+ *                     color:
+ *                       type: string
+ *                       description: The color of the tag.
+ *                       example: "#FF0000"
+ *                     textColor:
+ *                       type: string
+ *                       description: The text color of the tag.
+ *                       example: "#FFFFFF"
+ *                     uses:
+ *                       type: number
+ *                       description: The number of times the tag has been used.
+ *                       example: 5
+ *               description:
+ *                 type: string
+ *                 description: The description of the list.
+ *                 example: "Tasks to be completed"
+ */
 const groupSchema = new mongoose.Schema({
     name: {
         type: String,
