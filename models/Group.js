@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const List = require('./List');
+const Todo = require('./Todo');
 
 /**
  * @swagger
@@ -196,6 +196,61 @@ groupSchema.pre('remove', async function (next) {
     const List = require('./List');
     await List.deleteMany({ owner: this._id });
     next();
+});
+
+groupSchema.pre('findOneAndDelete', async function(next) {
+    const groupId = this.getQuery()['_id'];
+
+    try {
+        // Fetch the entire group document
+        const group = await this.model.findById(groupId).populate('groupListsModel');
+        //console.log('DEBUG -- middleware: Group to delete: ', group);
+        if (!group) {
+            return next(new Error('Group not found'));
+        }
+
+        // Perform cleanup: Remove the group and its lists from all users' lists
+        const listIds = group.groupListsModel.map(list => list._id);
+        console.log('DEBUG -- middleware: Lists to delete: ', listIds);
+
+        const User = require('./User'); // to avoid circular dependency
+        const users = await User.find({ myLists: { $in: listIds } });
+
+        for (const userRecord of users) {
+            if (group.groupListsModel.some(list => {
+                console.log('Checking list:', list.listName, 'against active list:', userRecord.activeList);
+                const isMatch = list.listName === userRecord.activeList;
+                console.log('Is match:', isMatch);
+                return isMatch;
+            })) {
+                console.log('Match found, updating user list to "all":');
+                userRecord.activeList = 'all';
+                console.log('Updated userRecord.activeList:', userRecord.activeList);
+                await userRecord.save();
+            } else {
+                console.log('No match found for active list:', userRecord.activeList);
+            }
+        }
+
+        await User.updateMany(
+            { myLists: { $in: listIds } },
+            { $pull: { myLists: { $in: listIds } } }
+        );
+
+        // Remove Todos that are only in the lists being deleted
+        await Todo.deleteMany({
+            inListNew: { $in: listIds },
+            $expr: { $eq: [{ $size: "$inListNew" }, 1] }
+        });
+
+        const List = require('./List'); // to avoid circular dependency
+        await List.deleteMany({ _id: { $in: listIds } });
+
+        next();
+    } catch (error) {
+        console.error('Error during cleanup: ', error);
+        next(error);
+    }
 });
 
 

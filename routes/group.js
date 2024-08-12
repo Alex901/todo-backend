@@ -629,5 +629,23 @@ router.put('/updateRole/:groupId', async (req, res) => {
     }
 });
 
+router.delete('/deleteGroup/:groupId', async (req, res) => {
+    const groupId = req.params.groupId;
+
+    try {
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).send({ message: 'Group not found' });
+        }
+
+        await Group.findByIdAndDelete(groupId);
+
+        res.status(200).send({ message: 'Group deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting group: ', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
 
 module.exports = router;
