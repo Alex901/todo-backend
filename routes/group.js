@@ -458,33 +458,31 @@ router.put('/updateGroupInfo/:id', async (req, res) => {
 
 /**
  * @swagger
- * /leaveGroup/{groupId}:
+ * /groups/removeMember/{groupId}:
  *   put:
- *     summary: Leave a group
- *     description: Removes a user from a group and updates the user's list of groups.
- *     tags:
- *       - Group
+ *     summary: Remove a member from a group or allow a member to leave a group
+ *     tags: [Groups]
  *     parameters:
  *       - in: path
  *         name: groupId
- *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the group to leave.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               user:
- *                 type: object
- *                 properties:
- *                   _id:
- *                     type: string
- *                     description: The ID of the user.
- *                     example: "60d0fe4f5311236168a109ca"
+ *         required: true
+ *         description: The ID of the group
+ *       - in: body
+ *         name: user
+ *         description: The user ID of the member to be removed or who wants to leave
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - userId
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                   description: The ID of the user
  *     responses:
  *       200:
  *         description: Left group successfully
@@ -517,36 +515,116 @@ router.put('/updateGroupInfo/:id', async (req, res) => {
  *                   type: string
  *                   example: "Internal server error"
  */
-router.put('/leaveGroup/:groupId', async (req, res) => {
+router.put('/removeMember/:groupId', async (req, res) => {
     const groupId = req.params.groupId;
-    const { user } = req.body;
+    const { userId } = req.body;
 
     try {
         // Find the group and remove the member
-        const group = await Group.findById(groupId);
+        const group = await Group.findById(groupId).populate('groupListsModel');
         if (!group) {
             return res.status(404).send({ message: 'Group not found' });
         }
 
-        console.log(group);
-
-        group.members = group.members.filter(member => member.member_id.toString() !== user._id);
+        group.members = group.members.filter(member => member.member_id.toString() !== userId);
         await group.save();
 
         // Find the user and remove the lists from the group
-        const userRecord = await User.findById(user._id);
+        const userRecord = await User.findById(userId);
         if (!userRecord) {
             return res.status(404).send({ message: 'User not found' });
         }
 
         if (Array.isArray(userRecord.myLists) && Array.isArray(group.groupListsModel)) {
-            userRecord.myLists = userRecord.myLists.filter(list => !group.groupListsModel.includes(list.toString()));
+            userRecord.myLists = userRecord.myLists.filter(list => {
+                return !group.groupListsModel.some(groupList => {
+                    //console.log('Comparing:', { groupList: groupList._id.toString(), list: list.toString() });
+                    return groupList._id.toString() === list.toString();
+                });
+            });
+
+            if (group.groupListsModel.some(list => {
+                console.log('Checking list:', list.listName, 'against active list:', userRecord.activeList);
+                const isMatch = list.listName === userRecord.activeList;
+                console.log('Is match:', isMatch);
+                return isMatch;
+            })) {
+                console.log('Match found, updating user list to "all":');
+                userRecord.activeList = 'all';
+                console.log('Updated userRecord.activeList:', userRecord.activeList);
+            } else {
+                console.log('No match found for active list:', userRecord.activeList);
+            }
         }
+
+
         await userRecord.save();
 
         res.status(200).send({ message: 'Left group successfully' });
     } catch (error) {
         console.error('Error leaving group: ', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * @swagger
+ * /groups/updateRole/{groupId}:
+ *   put:
+ *     summary: Update the role of a member in a group
+ *     tags: [Groups]
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the group
+ *       - in: body
+ *         name: member
+ *         description: The member ID and new role
+ *         schema:
+ *           type: object
+ *           required:
+ *             - memberId
+ *             - role
+ *           properties:
+ *             memberId:
+ *               type: string
+ *               description: The ID of the member
+ *             role:
+ *               type: string
+ *               description: The new role of the member
+ *               enum: [edit, observer, moderator]
+ *     responses:
+ *       200:
+ *         description: Role updated successfully
+ *       404:
+ *         description: Group or user not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put('/updateRole/:groupId', async (req, res) => {
+    const { groupId } = req.params;
+    const { memberId, role } = req.body;
+
+    try {
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).send({ message: 'Group not found' });
+        }
+
+        const member = group.members.find(member => member.member_id.toString() === memberId);
+        if (!member) {
+            return res.status(404).send({ message: 'Member not found in group' });
+        }
+
+        member.role = role;
+        await group.save();
+
+        res.status(200).send({ message: 'Role updated successfully' });
+    } catch (error) {
+        console.error('Error updating role: ', error);
         res.status(500).send({ message: 'Internal server error' });
     }
 });

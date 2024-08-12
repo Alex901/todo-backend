@@ -213,7 +213,13 @@ router.get('/checkLogin', async (req, res) => {
                 path: 'myLists',
                 populate: { path: 'owner' }
             })
-            .populate('groups');
+            .populate({
+                path: 'groups',
+                populate: {
+                    path: 'members.member_id',
+                    model: 'User' // Replace 'User' with the actual model name if different
+                }
+            });
             if (!user) {
                 return res.json({ valid: false });
             }
