@@ -21,50 +21,14 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: "Study Group"
- *               owner:
- *                 type: string
- *                 example: "60d0fe4f5311236168a109ca"
- *               listName:
- *                 type: string
- *                 example: "Group Tasks"
+ *             $ref: '#/components/schemas/Group'
  *     responses:
  *       201:
  *         description: Group created successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 _id:
- *                   type: string
- *                   example: "60d0fe4f5311236168a109ca"
- *                 name:
- *                   type: string
- *                   example: "Study Group"
- *                 owner:
- *                   type: string
- *                   example: "60d0fe4f5311236168a109ca"
- *                 groupListsModel:
- *                   type: array
- *                   items:
- *                     type: string
- *                     example: "60d0fe4f5311236168a109ca"
- *                 members:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       member_id:
- *                         type: string
- *                         example: "60d0fe4f5311236168a109ca"
- *                       role:
- *                         type: string
- *                         example: "moderator"
+ *               $ref: '#/components/schemas/Group'
  *       500:
  *         description: Internal server error
  *         content:
@@ -461,7 +425,7 @@ router.put('/updateGroupInfo/:id', async (req, res) => {
  * /groups/removeMember/{groupId}:
  *   put:
  *     summary: Remove a member from a group or allow a member to leave a group
- *     tags: [Groups]
+ *     tags: [Group]
  *     parameters:
  *       - in: path
  *         name: groupId
@@ -572,7 +536,7 @@ router.put('/removeMember/:groupId', async (req, res) => {
  * /groups/updateRole/{groupId}:
  *   put:
  *     summary: Update the role of a member in a group
- *     tags: [Groups]
+ *     tags: [Group]
  *     parameters:
  *       - in: path
  *         name: groupId
@@ -629,6 +593,51 @@ router.put('/updateRole/:groupId', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /deleteGroup/{groupId}:
+ *   delete:
+ *     summary: Delete a group by ID
+ *     tags: [Group]
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the group to delete
+ *     responses:
+ *       200:
+ *         description: Group deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Group deleted successfully
+ *       404:
+ *         description: Group not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Group not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ */
 router.delete('/deleteGroup/:groupId', async (req, res) => {
     const groupId = req.params.groupId;
 

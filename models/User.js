@@ -157,6 +157,10 @@ const userSchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
+        groupOnly: {
+          type: Boolean,
+          default: false,
+        },
       }
     }
   },

@@ -1104,9 +1104,6 @@ router.patch('/addtag/:id', async (req, res) => {
     if (!listToAddTagToo) {
       return res.status(404).send('List not found');
     }
-    if (!listToAddTagToo) {
-      return res.status(404).send('List not found');
-    }
 
     const newTag = {
       label: req.body.tagName,
@@ -1119,13 +1116,20 @@ router.patch('/addtag/:id', async (req, res) => {
       const allList = user.myLists.find(list => list.listName === 'all');
       if (allList) {
         allList.tags.push(newTag);
-        await allList.save(); // Save the "all" list with the new tag
+        await allList.save(); // Save the "all" list to generate the _id for the new tag
+  
+        // Fetch the tag from the "all" list to ensure the _id is consistent
+        const addedTag = allList.tags.find(tag => tag.label === newTag.label && tag.color === newTag.color && tag.textColor === newTag.textColor);
+        if (addedTag) {
+          listToAddTagToo.tags.push(addedTag);
+          await listToAddTagToo.save(); // Save the specific user list with the new tag
+        }
       }
+    } else {
+      // Add the new tag to the specific user list directly if it's the "all" list
+      listToAddTagToo.tags.push(newTag);
+      await listToAddTagToo.save();
     }
-
-    // console.log("DEBUG -- AddTag -- listNew.tags: ", listToAddTagToo.tags);
-    listToAddTagToo.tags.push(newTag);
-    await listToAddTagToo.save();
 
     res.status(200).send(user);
   } catch (error) {
@@ -1447,6 +1451,7 @@ router.patch('/update-todo-settings/:id', async (req, res) => {
   try {
     const userId = req.params.id;
     const { settingName, value } = req.body;
+    console.log('Setting name:', settingName);
 
     const user = await User.findById(userId);
     if (!user) {
