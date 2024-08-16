@@ -669,9 +669,18 @@ router.patch('/setlist/:id', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               listName:
- *                 type: string
- *                 example: "Shopping List"
+ *               newListData:
+ *                 type: object
+ *                 properties:
+ *                   listName:
+ *                     type: string
+ *                     example: "Shopping List"
+ *                   description:
+ *                     type: string
+ *                     example: "A list for shopping items"
+ *                   visibility:
+ *                     type: string
+ *                     example: "private"
  *     responses:
  *       200:
  *         description: List added successfully
@@ -700,6 +709,12 @@ router.patch('/setlist/:id', async (req, res) => {
  *                       listName:
  *                         type: string
  *                         example: "shopping list"
+ *                       description:
+ *                         type: string
+ *                         example: "A list for shopping items"
+ *                       visibility:
+ *                         type: string
+ *                         example: "private"
  *       400:
  *         description: List name already exists
  *         content:
@@ -728,15 +743,16 @@ router.patch('/setlist/:id', async (req, res) => {
  *               type: string
  *               example: "Internal server error"
  */
-//TODO: remember group list case!!!!
 router.patch('/addlist/:id', async (req, res) => {
-  //console.log('Req body: ', req.body);
   try {
     const user = await User.findById(req.params.id).populate('myLists');
     if (!user) {
       return res.status(404).send();
     }
-    const nameLowerCase = req.body.listName.toLowerCase();
+
+    const { listName, description, visibility } = req.body.newListData;
+    const nameLowerCase = listName.toLowerCase();
+
     // Check if the list name already exists in the old data structure
     const isListNameExistsInOldStructure = user.listNames.some(list => list.name === nameLowerCase);
     // Check if the list name already exists in the new data structure
@@ -750,7 +766,7 @@ router.patch('/addlist/:id', async (req, res) => {
     const newListOld = {
       name: nameLowerCase,
       tags: [],
-      description: '',
+      description: description || '',
     };
     user.listNames.push(newListOld);
 
@@ -758,12 +774,13 @@ router.patch('/addlist/:id', async (req, res) => {
     const newListNew = new List({
       listName: nameLowerCase,
       owner: user._id,
+      description: description || '',
+      visibility: visibility || 'private', // Default to 'private' if not provided
     });
     await newListNew.save();
     user.myLists.push(newListNew._id);
     user.activeList = newListNew.listName;
     await user.save();
-    // console.log("DEBUG -- AddList -- User: ", user);
 
     const updatedUser = await User.findById(user._id).populate('myLists').exec();
 
@@ -771,6 +788,7 @@ router.patch('/addlist/:id', async (req, res) => {
   } catch (error) {
     console.error('Error adding list', error);
     console.error('Error', error.message);
+    res.status(500).send('Internal server error');
   }
 });
 
@@ -1117,7 +1135,7 @@ router.patch('/addtag/:id', async (req, res) => {
       if (allList) {
         allList.tags.push(newTag);
         await allList.save(); // Save the "all" list to generate the _id for the new tag
-  
+
         // Fetch the tag from the "all" list to ensure the _id is consistent
         const addedTag = allList.tags.find(tag => tag.label === newTag.label && tag.color === newTag.color && tag.textColor === newTag.textColor);
         if (addedTag) {

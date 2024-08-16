@@ -656,5 +656,72 @@ router.delete('/deleteGroup/:groupId', async (req, res) => {
     }
 });
 
+router.post('/createGroupList/:groupId', async (req, res) => {
+    const groupId = req.params.groupId;
+    console.log('Creating group list for group:', groupId);
+    const { listName, description, visibility } = req.body;
+
+    try {
+        // Fetch the group and populate members
+        const group = await Group.findById(groupId).populate('members').populate('groupListsModel');
+        if (!group) {
+            return res.status(404).send({ message: 'Group not found' });
+        }
+
+        // Convert listName to lowercase
+        const listNameLowerCase = listName.toLowerCase();
+
+        let existingList = null;
+        for (const list of group.groupListsModel) {
+            if (list.listName === listNameLowerCase) {
+                existingList = list;
+                break;
+            }
+        }
+
+        if (existingList) {
+            // Handle the case where the list already exists
+            return res.status(400).json({ error: 'A list with this name already exists.' });
+        } else {
+
+            // Create a new list
+            const newList = new List({
+                listName: listNameLowerCase,
+                description: description || '',
+                visibility: visibility || 'private', // Default to 'private' if not provided
+                owner: groupId,
+                type: 'groupList',
+                ownerModel: 'Group'
+            });
+            await newList.save();
+
+
+            // Fetch the _id of the newly created list
+            const listId = newList._id;
+
+            group.groupListsModel.push(listId);
+            await group.save();
+
+            // Update the list references for all members
+            const memberUpdates = group.members.map(async (member) => {
+                const user = await User.findById(member.member_id);
+                if (!user) {
+                    throw new Error(`User with id ${member.member_id} not found`);
+                }
+                if (!user.myLists.includes(listId)) {
+                    user.myLists.push(listId);
+                    await user.save();
+                }
+            });
+            await Promise.all(memberUpdates);
+
+            res.status(200).send({ message: 'List created successfully', listId });
+        }
+    } catch (error) {
+        console.error('Error creating group list: ', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
 
 module.exports = router;

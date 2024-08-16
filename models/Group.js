@@ -170,6 +170,7 @@ groupSchema.pre('save', async function (next) {
     const User = require('./User');
 
     if (this.isModified('members')) {
+        console.log('Group Model pre save -- members modified');
         for (let member of this.members) {
             const user = await User.findById(member.member_id);
             if (user) {
