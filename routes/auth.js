@@ -85,7 +85,6 @@ router.post('/login', async (req, res) => {
         // Check if the user exists
         const user = await User.findOne({ username: req.body.username }).populate('myLists').populate('groups');
         if (!user) {
-            console.log('User not found');
             return res.status(404).send({ error: 'User not found' });
         }
 

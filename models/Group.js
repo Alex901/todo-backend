@@ -170,7 +170,7 @@ groupSchema.pre('save', async function (next) {
     const User = require('./User');
 
     if (this.isModified('members')) {
-        console.log('Group Model pre save -- members modified');
+        // console.log('Group Model pre save -- members modified');
         for (let member of this.members) {
             const user = await User.findById(member.member_id);
             if (user) {
@@ -199,7 +199,7 @@ groupSchema.pre('remove', async function (next) {
     next();
 });
 
-groupSchema.pre('findOneAndDelete', async function(next) {
+groupSchema.pre('findOneAndDelete', async function (next) {
     const groupId = this.getQuery()['_id'];
 
     try {
@@ -212,21 +212,19 @@ groupSchema.pre('findOneAndDelete', async function(next) {
 
         // Perform cleanup: Remove the group and its lists from all users' lists
         const listIds = group.groupListsModel.map(list => list._id);
-        console.log('DEBUG -- middleware: Lists to delete: ', listIds);
+        // console.log('DEBUG -- middleware: Lists to delete: ', listIds);
 
         const User = require('./User'); // to avoid circular dependency
         const users = await User.find({ myLists: { $in: listIds } });
 
         for (const userRecord of users) {
             if (group.groupListsModel.some(list => {
-                console.log('Checking list:', list.listName, 'against active list:', userRecord.activeList);
+                // console.log('Checking list:', list.listName, 'against active list:', userRecord.activeList);
                 const isMatch = list.listName === userRecord.activeList;
-                console.log('Is match:', isMatch);
+                // console.log('Is match:', isMatch);
                 return isMatch;
             })) {
-                console.log('Match found, updating user list to "all":');
                 userRecord.activeList = 'all';
-                console.log('Updated userRecord.activeList:', userRecord.activeList);
                 await userRecord.save();
             } else {
                 console.log('No match found for active list:', userRecord.activeList);

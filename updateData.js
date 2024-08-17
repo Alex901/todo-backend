@@ -69,7 +69,7 @@ async function updateTodos(users, ListModel) {
                 const listForTodo = userLists.find(list => list.listName === listName.trim());
 
                 if (listForTodo) {
-                    console.log(`List found for todo ${todo._id}: ${listForTodo._id}`);
+                    // console.log(`List found for todo ${todo._id}: ${listForTodo._id}`);
                     // If the list is found, add its reference to inListNew
                     todo.inListNew.push(listForTodo._id);
                 } else {
@@ -140,7 +140,7 @@ async function updateEstTimes(users) {
 
             // Multiply the estimated time by 60
             if (todo.estimatedTime > 0) {
-                console.log(`Updating estimated time for todo ${todo._id}`);
+               // console.log(`Updating estimated time for todo ${todo._id}`);
                 todo.estimatedTime *= 60;
             }
             // Save the updated todo
@@ -164,7 +164,7 @@ async function main() {
         // await updateGroups(users); // Uncomment when updateGroups is implemented
         await updateEstTimes(users);
 
-        console.log('Update process completed.');
+        // console.log('Update process completed.');
     } catch (err) {
         console.error('Update process failed:', err);
     }
