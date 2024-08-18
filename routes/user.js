@@ -345,7 +345,17 @@ router.get('/getall', authenticate, async (req, res) => {
 router.get('/:username', async (req, res) => {
   console.log('Username: ', req.params.username);
   try {
-    const user = await User.findOne({ username: req.params.username }).populate('myLists');
+    const user = await User.findOne({ username: req.params.username }).populate({
+      path: 'myLists',
+      populate: { path: 'owner' }
+  })
+  .populate({
+      path: 'groups',
+      populate: {
+          path: 'members.member_id',
+          model: 'User' // Replace 'User' with the actual model name if different
+      }
+  });
     if (!user) {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });
