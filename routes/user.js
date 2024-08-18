@@ -348,14 +348,14 @@ router.get('/:username', async (req, res) => {
     const user = await User.findOne({ username: req.params.username }).populate({
       path: 'myLists',
       populate: { path: 'owner' }
-  })
-  .populate({
-      path: 'groups',
-      populate: {
+    })
+      .populate({
+        path: 'groups',
+        populate: {
           path: 'members.member_id',
           model: 'User' // Replace 'User' with the actual model name if different
-      }
-  });
+        }
+      });
     if (!user) {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });
@@ -1498,6 +1498,102 @@ router.patch('/update-todo-settings/:id', async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error('Error updating settings', error);
+    res.status(500).send('Internal server error');
+  }
+});
+
+/**
+ * @swagger
+ * /edit-user-list/{userId}:
+ *   patch:
+ *     summary: Edit a user's list
+ *     description: Update a specific list for a user with new data.
+ *     tags:
+ *       - User
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               listToEdit:
+ *                 type: string
+ *                 description: ID of the list to edit
+ *                 example: "60d0fe4f5311236168a109cb"
+ *               editedListData:
+ *                 type: object
+ *                 description: New data for the list
+ *                 example: { "title": "Updated List Title", "items": ["item1", "item2"] }
+ *     responses:
+ *       200:
+ *         description: List edited successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "List edited successfully"
+ *                 list:
+ *                   type: object
+ *                   description: The updated list
+ *                   example: { "_id": "60d0fe4f5311236168a109cb", "title": "Updated List Title", "items": ["item1", "item2"] }
+ *       404:
+ *         description: User or List not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
+router.patch('/edit-user-list/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const { listToEdit, editedListData } = req.body;
+  console.log("DEBUG -- listToEdit: ", listToEdit);
+  console.log("DEBUG -- editedListData: ", editedListData);
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const listExists = user.myLists.some(listId => listId.toString() === listToEdit);
+    if (!listExists) {
+      return res.status(404).json({ message: 'List not found in user\'s lists' });
+    }
+
+    const list = await List.findById(listToEdit);
+    if (!list) {
+      return res.status(404).json({ message: 'List not found' });
+    }
+
+    // Update the list with the new data
+    list.set(editedListData);
+    await list.save();
+
+    res.status(200).json({ message: 'List edited successfully', list });
+  } catch (error) {
+    console.error('Error editing list', error);
     res.status(500).send('Internal server error');
   }
 });
