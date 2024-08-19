@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Todo = require('./Todo');
+const User = require('./User');
 
 /**
  * @swagger
