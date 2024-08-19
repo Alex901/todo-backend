@@ -723,18 +723,19 @@ router.post('/createGroupList/:groupId', async (req, res) => {
     }
 });
 
-router.delete('/group/deleteGroupList/:groupId/:listId', async (req, res) => {
-    const { listId } = req.params;
+router.delete('/deleteGroupList/:listId/:ownerId', async (req, res) => {
+    const { listId, ownerId } = req.params;
+    console.log('Deleting list with ID:', listId, 'and owner ID:', ownerId);
 
     try {
         // Find the list
-        const list = await List.findById(listId);
+        const list = await List.findOne({ _id: listId, owner: ownerId});
         if (!list) {
             return res.status(404).json({ message: 'List not found' });
         }
 
         // Delete the list (middleware will handle the cleanup)
-        await list.remove();
+        await list.deleteOne();
 
         res.status(200).json({ message: 'List deleted successfully' });
     } catch (error) {

@@ -137,7 +137,7 @@ listSchema.pre('deleteOne', { document: true, query: false }, async function (ne
                     console.warn(`User with ID ${member.member_id} not found`);
                     continue;
                 }
-                user.myLists = user.myLists.filter(id => id.toString() !== listId.toString());
+                user.myLists = user.myLists.filter(id => id._id.toString() !== listId.toString());
                 await user.save();
             }
 
