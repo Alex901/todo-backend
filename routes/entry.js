@@ -91,7 +91,7 @@ const corsOptions = { //This is not nice
  *                   example: "Internal server error"
  */
 router.post('/', async (req, res) => {
-  console.log("req.body: ", req.body);
+  //console.log("req.body: ", req.body);
   try {
     if (req.body.tags.length > 0) {
       const tagNames = [];

@@ -723,5 +723,27 @@ router.post('/createGroupList/:groupId', async (req, res) => {
     }
 });
 
+router.delete('/group/deleteGroupList/:groupId/:listId', async (req, res) => {
+    const { listId } = req.params;
+
+    try {
+        // Find the list
+        const list = await List.findById(listId);
+        if (!list) {
+            return res.status(404).json({ message: 'List not found' });
+        }
+
+        // Delete the list (middleware will handle the cleanup)
+        await list.remove();
+
+        res.status(200).json({ message: 'List deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting list', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+module.exports = router;
+
 
 module.exports = router;

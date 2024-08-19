@@ -837,26 +837,9 @@ router.patch('/addlist/:id', async (req, res) => {
  *             schema:
  *               type: object
  *               properties:
- *                 _id:
+ *                 message:
  *                   type: string
- *                   example: "60d0fe4f5311236168a109ca"
- *                 username:
- *                   type: string
- *                   example: "johndoe"
- *                 activeList:
- *                   type: string
- *                   example: "shopping list"
- *                 myLists:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: "60d0fe4f5311236168a109cb"
- *                       listName:
- *                         type: string
- *                         example: "shopping list"
+ *                   example: "List deleted successfully"
  *       400:
  *         description: Invalid list name or list name does not exist
  *         content:
@@ -868,69 +851,48 @@ router.patch('/addlist/:id', async (req, res) => {
  *                   type: string
  *                   example: "Invalid list name"
  *       404:
- *         description: User not found
+ *         description: User or list not found
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 error:
  *                   type: string
  *                   example: "User not found"
  *       500:
  *         description: Internal server error
  *         content:
- *           text/plain:
+ *           application/json:
  *             schema:
- *               type: string
- *               example: "Internal server error"
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "An error occurred while deleting the list"
  */
 router.delete('/deletelist/:id', async (req, res) => {
-  // console.log('DEBUG -- Entering delete list:Req body.listName: ', req.body.listName);
   try {
     const user = await User.findById(req.params.id);
-    //console.log("User: ", user);
     if (!user) {
-      return res.status(404).send();
+      return res.status(404).send({ error: 'User not found' });
     }
+
     if (!req.body.listName || typeof req.body.listName !== 'string') {
       return res.status(400).send({ error: 'Invalid list name' });
     }
 
-    // New functionality for the updated data model
-    if (user.myLists && Array.isArray(user.myLists) && user.myLists.length > 0) {
-      await user.populate('myLists');
-      // console.log("DEBUG -- DeleteList -- User._id: ", user._id);
-      // console.log("DEBUG -- DeleteList -- User.myLists: ", user.myLists);
-      const listToDelete = await List.findOne({ listName: req.body.listName, owner: user._id });
-      if (listToDelete) {
-        // console.log("DEBUG -- DeleteList --List to delete: ", listToDelete);
-        await List.deleteOne({ _id: listToDelete._id });
-
-        // Update the user's myLists by filtering out the deleted list's ID
-        // Dead references will be removed here too
-        user.myLists = user.myLists.filter(listId => !listId._id.equals(listToDelete._id));
-        if (user.myLists.length > 0) {
-          user.activeList = user.myLists[0].listName;
-        } else {
-          user.activeList = '';
-        }
-        await Todo.deleteMany({ inListNew: { $in: [listToDelete._id] } })
-        await user.save();
-      }
+    // Find the list to delete
+    const listToDelete = await List.findOne({ listName: req.body.listName, owner: user._id });
+   // console.log("List to delete: ", listToDelete);  
+    if (!listToDelete) {
+      return res.status(404).send({ error: 'List not found' });
     }
 
-    // Existing functionality for deleting entries in the list and updating listNames
-    if (user.listNames && user.listNames.some(list => list.name === req.body.listName)) {
-      await Todo.deleteMany({ inList: { $in: [req.body.listName] } });
-      user.listNames = user.listNames.filter(list => list.name !== req.body.listName);
-      await user.save();
-    } else if (!user.myLists) {
-      // If the list name does not exist in the old model and myLists is not used
-      return res.status(400).send({ error: 'List name does not exist' });
-    }
+    // Delete the list (middleware will handle the cleanup)
+    await listToDelete.deleteOne();
 
-    res.send(user);
+    res.status(200).send({ message: 'List deleted successfully' });
   } catch (error) {
     console.error('Error deleting list', error);
     res.status(500).send({ error: 'An error occurred while deleting the list' });
