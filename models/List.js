@@ -126,6 +126,8 @@ listSchema.pre('deleteOne', { document: true, query: false }, async function (ne
                 throw new Error(`Group with ID ${list.owner} not found`);
             }
 
+
+
             // Remove the list from group's groupListsModel
             group.groupListsModel = group.groupListsModel.filter(id => id.toString() !== listId.toString());
             await group.save();
@@ -136,22 +138,26 @@ listSchema.pre('deleteOne', { document: true, query: false }, async function (ne
                 if (!user) {
                     console.warn(`User with ID ${member.member_id} not found`);
                     continue;
+                } else {
+                    if (user.activeList === list.listName) {
+                        user.activeList = user.myLists[0].listName || 'all';
+                    }
+                    user.myLists = user.myLists.filter(id => id._id.toString() !== listId.toString());
+                    await user.save();
                 }
-                user.myLists = user.myLists.filter(id => id._id.toString() !== listId.toString());
-                await user.save();
-            }
 
-            // Find and update todos
-            const todos = await Todo.find({ owner: group._id });
-            for (const todo of todos) {
-                if (todo.inListNew.includes(listId)) {
-                    if (todo.inListNew.length === 1) {
-                        // If it's the only reference, delete the todo
-                        await todo.remove();
-                    } else {
-                        // Otherwise, just remove the reference
-                        todo.inListNew = todo.inListNew.filter(id => id.toString() !== listId.toString());
-                        await todo.save();
+                // Find and update todos
+                const todos = await Todo.find({ owner: group._id });
+                for (const todo of todos) {
+                    if (todo.inListNew.includes(listId)) {
+                        if (todo.inListNew.length === 1) {
+                            // If it's the only reference, delete the todo
+                            await todo.deleteOne();
+                        } else {
+                            // Otherwise, just remove the reference
+                            todo.inListNew = todo.inListNew.filter(id => id.toString() !== listId.toString());
+                            await todo.save();
+                        }
                     }
                 }
             }
