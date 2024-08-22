@@ -8,6 +8,7 @@ const userRoutes = require('./routes/user');
 const entriesRoutes = require('./routes/entry');
 const groupRoutes = require('./routes/group');
 const notificationRoutes = require('./routes/notification');
+const feedbackRoutes = require('./routes/feedback');
 const Todo = require('./models/Todo');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -75,6 +76,7 @@ app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/groups', groupRoutes)
 app.use('/notifications', notificationRoutes);
+app.use('/feedback', feedbackRoutes);
 
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`, req.body);
