@@ -12,14 +12,25 @@ const feedbackSchema = new mongoose.Schema({
             message: props => `${props.value} is not a valid ObjectId or string!`
         }
     },
+    mailingList: {
+        type: Boolean,
+    },
     message: {
         type: String,
         required: true
     },
     type: {
         type: String,
-        enum: ['bug', 'feature', 'feedback', 'other'],
+        enum: ['feedback', 'bug','performance', 'feature',  'reviwe', 'issues', 'payment', 'other'],
         default: 'other'
+    },
+    score: {
+        type: Number,
+        min: 1,
+        max: 5,
+        required: function () {
+            return this.type === 'review';
+        }
     },
     resolved: {
         type: Boolean,
