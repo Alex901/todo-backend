@@ -80,7 +80,7 @@ feedbackSchema.pre('save', async function (next) {
                         to: admin._id,
                         type: this.subType,
                         subType: this.type,
-                        message: `There is 1 new ${this.type} report to review.`,
+                        message: `There is 1 new ${this.type} report to review.`, //TODO: Crappy message
                         count: 1
                     });
                     await newNotification.save();
