@@ -487,7 +487,7 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
 
 /**
  * @swagger
- * /{id}:
+ * /delete-user/{id}:
  *   delete:
  *     summary: Delete a user and their associated data
  *     description: Deletes a user, their lists, todos, and handles group membership. If the user is the only member of a group, the group is deleted. Otherwise, the user is removed from the group.
@@ -521,7 +521,7 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  *             schema:
  *               type: object
  *               properties:
- *                 message:
+ *                 error:
  *                   type: string
  *                   example: "User not found"
  *       500:
@@ -532,27 +532,33 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  *               type: string
  *               example: "Internal server error"
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/delete-user/:id', async (req, res) => {
   try {
+    console.log('DEBUG -- Delete user:', req.params);
     const userId = req.params.id;
     const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).send({ error: 'User not found' });
+    }
+
     await List.deleteMany({ owner: req.params.id, type: 'userList' }); //Delete all user's lists
     await Todo.deleteMany({ owner: req.params.id }); //delete all entries for the user
 
-    const groups = await Group.find({ members: userId });
+    const groups = await Group.find({ 'members.member_id': userId });
+    //console.log('DEBUG -- Groups in delete user: ', groups);
     for (const group of groups) {
       if (group.members.length === 1) {
+        // Find and delete all Todos where owner === group._id
+        await Todo.deleteMany({ owner: group._id });
+      
         // If the user is the only member, remove the group
         await Group.findByIdAndDelete(group._id);
       } else {
         // Otherwise, remove the user from the group
-        group.members = group.members.filter(member => member.toString() !== userId);
+        group.members = group.members.filter(member => member.member_id.toString() !== userId.toString());
         await group.save();
       }
-    }
-
-    if (!user) {
-      return res.status(404).send();
     }
     res.send(user);
   } catch (error) {
