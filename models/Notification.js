@@ -22,7 +22,11 @@ const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['friend', 'group', 'message']
+        enum: ['friend', 'group', 'message', 'feedback', 'other']
+    },
+    subType: {
+        type: String,
+        enum: ['bug', 'performance', 'feature', 'review', 'issues', 'payment', 'other'],
     },
     group: {
         type: mongoose.Schema.Types.ObjectId,
@@ -36,6 +40,10 @@ const notificationSchema = new mongoose.Schema({
         default: Date.now,
         expires: 60 * 60 * 24 * 30 // This document will be removed 7 days after it's created
     },
+    count: {
+        type: Number,
+        default: 1
+    }
 
 }, {
     timestamps: true,
