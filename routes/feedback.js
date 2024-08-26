@@ -138,4 +138,96 @@ router.get('/getAll', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /resolveFeedback/{feedbackId}:
+ *   put:
+ *     summary: Resolve a feedback entry
+ *     description: Updates the resolved status of a specific feedback entry.
+ *     tags:
+ *       - Feedback
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         description: The ID of the feedback entry to update.
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: resolved
+ *         required: true
+ *         description: The new resolved status of the feedback entry.
+ *         schema:
+ *           type: object
+ *           properties:
+ *             resolved:
+ *               type: boolean
+ *     responses:
+ *       200:
+ *         description: Successfully updated the feedback entry.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 from:
+ *                   type: string
+ *                 mailingList:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 type:
+ *                   type: string
+ *                 subType:
+ *                   type: string
+ *                 score:
+ *                   type: number
+ *                 resolved:
+ *                   type: boolean
+ *                 resolvedAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Feedback not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.put('/resolveFeedback/:feedbackId', async (req, res) => {
+    const { feedbackId } = req.params;
+    const { resolved } = req.body;
+
+    try {
+        const feedback = await Feedback.findById(feedbackId);
+        if (!feedback) {
+            return res.status(404).send({ message: 'Feedback not found' });
+        }
+
+        feedback.resolved = resolved;
+        await feedback.save();
+
+        res.status(200).send(feedback);
+    } catch (error) {
+        console.error('Error changing resolved status:', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+
+
 module.exports = router;

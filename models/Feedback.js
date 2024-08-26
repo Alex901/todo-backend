@@ -21,7 +21,7 @@ const feedbackSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['bug', 'performance', 'feature', 'reviwe', 'issues', 'payment', 'other', ''],
+        enum: ['bug', 'performance', 'feature', 'review', 'issues', 'payment', 'other', ''],
         default: ''
     },
     subType: {
@@ -52,6 +52,11 @@ const feedbackSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    resolvedAt: {
+        type: Date,
+        default: null,
+        index: { expires: '7d'}
+    }
 },
     {
         collection: 'Feedback',
@@ -94,24 +99,44 @@ feedbackSchema.pre('save', async function (next) {
     next();
 });
 
+feedbackSchema.pre('save', function (next) {
+    if (this.isModified('resolved') && this.resolved !== null && this.resolved !== 'accepted') {
+        this.resolvedAt = new Date();
+    } else if (this.isModified('resolved') && (this.resolved === null || this.resolved === 'accepted')) {
+        this.resolvedAt = null; // Ensure resolvedAt is null if resolved is null or accepted
+    }
+    next();
+});
+
 feedbackSchema.post('save', async function (doc, next) {
     const User = require('./User');
     const Notification = require('./Notification');
 
     if (doc.resolved) {
+        console.log('DEBUG -- Feedback resolved: ', doc.resolved);
         try {
             const admins = await User.find({ role: 'admin' });
+            console.log('DEBUG -- doc type: ', doc.type);
 
             for (const admin of admins) {
-                const existingNotification = await Notification.findOne({ to: admin._id, subType: doc.subType });
-
+                const existingNotification = await Notification.findOne({ to: admin._id, subType: doc.type });
+                console.log('DEBUG -- Existing notification: ', existingNotification);
                 if (existingNotification) {
-                    existingNotification.count -= 1;
-                    if (existingNotification.count > 0) {
-                        existingNotification.message = `There are ${existingNotification.count} new ${doc.type} reports to review.`;
-                        await existingNotification.save();
-                    } else {
-                        await Notification.deleteOne({ _id: existingNotification._id });
+                    try {
+                        // Query the database to get the count of feedback entries with the specified type and resolved !== null
+                        const feedbackCount = await Feedback.countDocuments({ type: doc.type, resolved: null });
+                        console.log('DEBUG -- feedbackCount: ', feedbackCount);
+
+                        if(feedbackCount > 0) {
+                            existingNotification.count = feedbackCount;
+                            existingNotification.message = `There are ${feedbackCount} new ${doc.type} reports to review.`;
+                            await existingNotification.save();
+                        } else {
+                            await Notification.deleteOne({ _id: existingNotification._id });
+                        }
+                    } catch (error) {
+                        console.error('Error getting feedback count: ', error);
+                        next(error);
                     }
                 }
             }
