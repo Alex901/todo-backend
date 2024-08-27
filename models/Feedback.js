@@ -30,7 +30,7 @@ const feedbackSchema = new mongoose.Schema({
     },
     score: {
         type: Number,
-        min: 1,
+        min: 0,
         max: 5,
         required: function () {
             return this.type === 'review';

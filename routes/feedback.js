@@ -6,6 +6,74 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /feedback/fetchOfflineFeedback:
+ *   get:
+ *     summary: Fetch filtered feedback entries
+ *     description: Retrieves a list of feedback entries where type is either 'review' or 'feature', and resolved is 'accepted'.
+ *     tags:
+ *       - Feedback
+ *     responses:
+ *       200:
+ *         description: Successfully fetched the feedback entries.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   from:
+ *                     type: string
+ *                   mailingList:
+ *                     type: boolean
+ *                   message:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   subType:
+ *                     type: string
+ *                   score:
+ *                     type: number
+ *                   resolved:
+ *                     type: string
+ *                   resolvedAt:
+ *                     type: string
+ *                     format: date-time
+ *                   source:
+ *                     type: string
+ *                   upvotes:
+ *                     type: number
+ *                   downvotes:
+ *                     type: number
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+
+router.get('/fetchOfflineFeedback', async (req, res) => {
+    try {
+        const feedbacks = await Feedback.find({
+            type: { $in: ['review', 'feature'] },
+            resolved: 'accepted'
+        });
+        res.status(200).send(feedbacks);
+    } catch (error) {
+        console.error('Error fetching filtered feedback:', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+
+/**
+ * @swagger
  * /post-feedback:
  *   post:
  *     summary: Submit feedback
