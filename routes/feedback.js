@@ -296,6 +296,183 @@ router.put('/resolveFeedback/:feedbackId', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /feedback/upvote/{feedbackId}:
+ *   put:
+ *     summary: Upvote a feedback feature
+ *     description: Increases the upvotes of a feedback feature by one and adds the userId to the hasVoted array.
+ *     tags:
+ *       - Feedback
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the feedback to upvote
+ *       - in: body
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             userId:
+ *               type: string
+ *         description: The ID of the user who is upvoting
+ *     responses:
+ *       200:
+ *         description: Successfully upvoted the feedback feature.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 feedback:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     upvotes:
+ *                       type: number
+ *                     hasVoted:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       404:
+ *         description: Feedback not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+
+router.put('/upvote/:feedbackId', async (req, res) => {
+    const { feedbackId } = req.params;
+    const { userId } = req.body;
+
+    try {
+        const feedback = await Feedback.findById(feedbackId);
+
+        if (!feedback) {
+            return res.status(404).send({ message: 'Feedback not found' });
+        }
+
+        // Check if the user has already voted
+        if (!feedback.hasVoted.includes(userId)) {
+            feedback.upvotes += 1;
+            feedback.hasVoted.push(userId);
+            await feedback.save();
+        }
+
+        res.status(200).send({ message: 'Successfully upvoted the feedback feature', feedback });
+    } catch (error) {
+        console.error('Error upvoting feedback feature:', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * @swagger
+ * /feedback/downvote/{feedbackId}:
+ *   put:
+ *     summary: Downvote a feedback feature
+ *     description: Decreases the upvotes of a feedback feature by one and removes the userId from the hasVoted array.
+ *     tags:
+ *       - Feedback
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the feedback to downvote
+ *       - in: body
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             userId:
+ *               type: string
+ *         description: The ID of the user who is downvoting
+ *     responses:
+ *       200:
+ *         description: Successfully downvoted the feedback feature.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 feedback:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     upvotes:
+ *                       type: number
+ *                     hasVoted:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       404:
+ *         description: Feedback not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.put('/downvote/:feedbackId', async (req, res) => {
+    const { feedbackId } = req.params;
+    const { userId } = req.body;
+
+    try {
+        const feedback = await Feedback.findById(feedbackId);
+
+        if (!feedback) {
+            return res.status(404).send({ message: 'Feedback not found' });
+        }
+
+        if (!feedback.hasVoted.includes(userId)) {
+            feedback.downvotes += 1;
+            feedback.hasVoted.push(userId);
+            await feedback.save();
+        }
+
+        res.status(200).send({ message: 'Successfully downvoted the feedback feature', feedback });
+    } catch (error) {
+        console.error('Error downvoting feedback feature:', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
 
 
 module.exports = router;

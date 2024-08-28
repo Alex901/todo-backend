@@ -55,8 +55,12 @@ const feedbackSchema = new mongoose.Schema({
     resolvedAt: {
         type: Date,
         default: null,
-        index: { expires: '7d'}
-    }
+        index: { expires: '7d' }
+    },
+    hasVoted: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+    }],
 },
     {
         collection: 'Feedback',
@@ -127,7 +131,7 @@ feedbackSchema.post('save', async function (doc, next) {
                         const feedbackCount = await Feedback.countDocuments({ type: doc.type, resolved: null });
                         console.log('DEBUG -- feedbackCount: ', feedbackCount);
 
-                        if(feedbackCount > 0) {
+                        if (feedbackCount > 0) {
                             existingNotification.count = feedbackCount;
                             existingNotification.message = `There are ${feedbackCount} new ${doc.type} reports to review.`;
                             await existingNotification.save();
