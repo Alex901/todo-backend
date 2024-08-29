@@ -75,15 +75,24 @@ router.post('/register', register);
  *                   example: "Internal server error"
  */
 router.post('/login', async (req, res) => {
-    // console.log("req body ", req.body);
+    console.log("req body ", req.body);
+
     try {
         //Check if the username or password is null
         if (!req.body.username || !req.body.password) {
             return res.status(204).send();
         }
 
+        let queryField;
+        if (req.body.username.includes("@")) {
+            console.log("email");
+            queryField = { email: new RegExp(`^${req.body.username.trim()}$`, 'i') };
+        } else {
+            queryField = { username: req.body.username };
+        }
+
         // Check if the user exists
-        const user = await User.findOne({ username: req.body.username })
+        const user = await User.findOne(queryField);
         if (!user) {
             return res.status(404).send({ error: 'User not found' });
         }
@@ -208,17 +217,17 @@ router.get('/checkLogin', async (req, res) => {
         // Fetch the user from the database
         try {
             const user = await User.findById(decoded.userId)
-            .populate({
-                path: 'myLists',
-                populate: { path: 'owner' }
-            })
-            .populate({
-                path: 'groups',
-                populate: {
-                    path: 'members.member_id',
-                    model: 'User' // Replace 'User' with the actual model name if different
-                }
-            });
+                .populate({
+                    path: 'myLists',
+                    populate: { path: 'owner' }
+                })
+                .populate({
+                    path: 'groups',
+                    populate: {
+                        path: 'members.member_id',
+                        model: 'User' // Replace 'User' with the actual model name if different
+                    }
+                });
             if (!user) {
                 return res.json({ valid: false });
             }

@@ -345,17 +345,34 @@ router.get('/getall', authenticate, async (req, res) => {
 router.get('/:username', async (req, res) => {
   console.log('Username: ', req.params.username);
   try {
-    const user = await User.findOne({ username: req.params.username }).populate({
-      path: 'myLists',
-      populate: { path: 'owner' }
-    })
-      .populate({
-        path: 'groups',
-        populate: {
-          path: 'members.member_id',
-          model: 'User' // Replace 'User' with the actual model name if different
-        }
-      });
+    let user = null;
+
+    if (req.params.username.includes('@')) {
+      user = await User.findOne({ email: req.params.username }).populate({
+        path: 'myLists',
+        populate: { path: 'owner' }
+      })
+        .populate({
+          path: 'groups',
+          populate: {
+            path: 'members.member_id',
+            model: 'User' 
+          }
+        });
+    } else {
+      user = await User.findOne({ username: req.params.username }).populate({
+        path: 'myLists',
+        populate: { path: 'owner' }
+      })
+        .populate({
+          path: 'groups',
+          populate: {
+            path: 'members.member_id',
+            model: 'User' 
+          }
+        });
+    }
+   
     if (!user) {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });
@@ -551,7 +568,7 @@ router.delete('/delete-user/:id', async (req, res) => {
       if (group.members.length === 1) {
         // Find and delete all Todos where owner === group._id
         await Todo.deleteMany({ owner: group._id });
-      
+
         // If the user is the only member, remove the group
         await Group.findByIdAndDelete(group._id);
       } else {
@@ -890,7 +907,7 @@ router.delete('/deletelist/:id', async (req, res) => {
 
     // Find the list to delete
     const listToDelete = await List.findOne({ listName: req.body.listName, owner: user._id });
-   // console.log("List to delete: ", listToDelete);  
+    // console.log("List to delete: ", listToDelete);  
     if (!listToDelete) {
       return res.status(404).send({ error: 'List not found' });
     }
