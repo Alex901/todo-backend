@@ -6,6 +6,9 @@ const List = require('../models/List');
 const Group = require('../models/Group');
 const multer = require('multer');
 const { Storage } = require('@google-cloud/storage');
+const jwt = require('jsonwebtoken');
+const sendMail = require('../utils/mailer');
+
 require('dotenv').config({ path: './config/.env' });
 
 const router = express.Router();
@@ -204,7 +207,7 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
  *                   example: "Internal server error"
  */
 router.post('/create', async (req, res) => {
-  //  console.log("Req body: ", req.body);
+  console.log("Req body: ", req.body);
   try {
     // Check if username is null
     if (!req.body.username) {
@@ -218,8 +221,31 @@ router.post('/create', async (req, res) => {
       return res.status(400).send({ error: 'Username already exists' });
     }
 
+    const existingEmail = await User.findOne({ email: req.body.email });
+    if (existingEmail) {
+      return res.status(409).send({ error: 'Email already exists' });
+    }
+
     const user = new User(req.body);
     await user.save();
+
+    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '24h' });
+    user.activationToken = token;
+    await user.save();
+
+    const activationLink = `${req.protocol}://${req.get('host')}/auth/activate/${token}`;
+    const activationHtmlLink = `<a href="${activationLink}">activate your account</a>`;
+
+    if (req.body.isInvite) {
+      // Send invitation email
+      await sendMail(user.email, 'You are invited!', `You have been invited to use our service. Your username is ${user.username} and your password is ${req.body.password}.`);
+    } else {
+      if (user.verified === false || user.verified === undefined) {
+        console.log('Activation link: ', activationLink);
+        await sendMail(user.email, 'Activate your account', `Please click the following link to ${activationHtmlLink}.`);
+      }
+    }
+
     res.status(201).send(user);
   } catch (error) {
     console.error(error);
@@ -356,7 +382,7 @@ router.get('/:username', async (req, res) => {
           path: 'groups',
           populate: {
             path: 'members.member_id',
-            model: 'User' 
+            model: 'User'
           }
         });
     } else {
@@ -368,11 +394,11 @@ router.get('/:username', async (req, res) => {
           path: 'groups',
           populate: {
             path: 'members.member_id',
-            model: 'User' 
+            model: 'User'
           }
         });
     }
-   
+
     if (!user) {
       console.log('User not found');
       return res.status(404).send({ message: 'User not found' });

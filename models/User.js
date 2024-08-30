@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    verified: {
+      type: Boolean,
+      default: false
+    },
     role: {
       type: String,
       default: 'user',
@@ -162,7 +166,11 @@ const userSchema = new mongoose.Schema(
           default: false,
         },
       }
-    }
+    }, 
+    activationToken: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

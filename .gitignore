@@ -16,6 +16,7 @@ todo-backend/
 stringify.js
 parsingTest.js
 encodeKey.js
+generate-token.js
 
 # Editor directories and files
 .vscode/*

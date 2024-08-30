@@ -4,8 +4,9 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const { error } = require('winston');
 const jwt = require('jsonwebtoken');
-
 const router = express.Router();
+
+require('dotenv').config();
 
 router.post('/register', register);
 
@@ -239,6 +240,34 @@ router.get('/checkLogin', async (req, res) => {
         }
     });
 });
+
+
+// Activation endpoint
+router.get('/activate/:token', async (req, res) => {
+    const { token } = req.params;
+  
+    try {
+      // Find the user by the activation token
+      const user = await User.findOne({
+        activationToken: token,
+      });
+  
+      // Check if the token is valid and not expired
+      if (!user || user.activationTokenExpires < Date.now()) {
+        return res.status(400).json({ message: 'Invalid or expired activation link' });
+      }
+  
+      // Activate the user
+      user.verified = true;
+      user.activationToken = undefined;
+      await user.save();
+  
+      res.redirect('http://localhost:5173'); //Remember this 
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Activation failed' });
+    }
+  });
 
 
 module.exports = router;
