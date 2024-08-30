@@ -260,6 +260,7 @@ router.get('/activate/:token', async (req, res) => {
       // Activate the user
       user.verified = true;
       user.activationToken = undefined;
+      user.__v = 1;
       await user.save();
   
       res.redirect('http://localhost:5173'); //Remember this 

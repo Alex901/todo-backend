@@ -510,6 +510,7 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
       }
       // Set the password to the new password
       user.set({ password: newPassword });
+      user.__v++;
       userData.password = newPassword;
       console.log("newPassword: ", user.password);
     }
