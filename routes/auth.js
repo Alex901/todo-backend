@@ -263,7 +263,11 @@ router.get('/activate/:token', async (req, res) => {
       user.__v = 1;
       await user.save();
   
-      res.redirect('http://localhost:5173'); //Remember this 
+      const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://www.habitforge.se' 
+      : 'http://localhost:5173';
+
+      res.redirect(redirectUrl);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Activation failed' });
