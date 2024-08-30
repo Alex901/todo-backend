@@ -27,13 +27,13 @@ const allowOrigins = [
     'https://the-task-forge.netlify.app',
     'http://localhost:5173',
     'http://localhost:5000',
-    'https://habitforge.se/',
+    'https://habitforge.se/'
 ]
 const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
 const errorLogPath = path.join(__dirname, 'logs', 'error.log');
 const corsOptions = {
     origin: function (origin, callback) {
-        if (allowOrigins.indexOf(origin) !== -1 || !origin) {
+        if (allowOrigins.indexOf(origin) !== -1 || !origin || origin.endsWith('.habitforge.se')) {
           callback(null, true)
         } else {
           callback(new Error('Not allowed by CORS'))
