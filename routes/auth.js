@@ -98,6 +98,10 @@ router.post('/login', async (req, res) => {
             return res.status(404).send({ error: 'User not found' });
         }
 
+        if (!user.verified) {
+            return res.status(403).send({ error: 'Please verify you e-mail before logging in. \n Check your inbox for the verification e-mail.'});
+        }
+
         // Authenticate the user
         const isMatch = await bcrypt.compare(req.body.password, user.password);
         if (!isMatch) {
@@ -242,7 +246,50 @@ router.get('/checkLogin', async (req, res) => {
 });
 
 
-// Activation endpoint
+/**
+ * @swagger
+ * /auth/activate/{token}:
+ *   get:
+ *     summary: Activate user account
+ *     description: Activate a user account using the activation token.
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Activation token
+ *     responses:
+ *       200:
+ *         description: Redirect to the appropriate URL based on the environment
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               example: "<html>...</html>"
+ *       400:
+ *         description: Invalid or expired activation link
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid or expired activation link"
+ *       500:
+ *         description: Activation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Activation failed"
+ */
 router.get('/activate/:token', async (req, res) => {
     const { token } = req.params;
   
