@@ -272,7 +272,7 @@ router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
 
     if (username) {
       // If a username was provided, return users entries
-      entries = await Todo.find({ owner: username });
+      entries = await Todo.find({ owner: username }).populate('inListNew');
     } else {
       // If no username was provided, return limited entries: guest user
       entries = await Todo.find({ inList: { $eq: [] } });
