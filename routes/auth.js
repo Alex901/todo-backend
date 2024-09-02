@@ -108,6 +108,7 @@ router.post('/login', async (req, res) => {
             console.log(error.toString);
             return res.status(400).send({ error: 'Invalid login credentials' });
         } else {
+            console.log("User authenticated, sending cookie!")
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
             res.cookie('token', token, { sameSite: 'None', secure: true, httpOnly: true });
             res.status(200).send({ message: 'User authenticated' });
