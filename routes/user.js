@@ -238,7 +238,7 @@ router.post('/create', async (req, res) => {
 
     if (req.body.isInvite) {
       // Send invitation email
-      await sendMail(user.email, 'You are invited!', `You have been invited to https://habitforge.se/. <br> Your <strong> username </strong> is <u> ${user.username} </u> and your <strong> password </strong> is <u> ${req.body.password}. </u> <hr> Upon first login you are able to change your credentials!`);
+      await sendMail(user.email, 'You are invited!', `You have been invited to https://habitforge.se. <br> Your <strong> username </strong> is <u> ${user.username} </u> and your <strong> password </strong> is <u> ${req.body.password}. </u> <hr> Upon first login you are able to change your credentials!`);
     } else {
       if (user.verified === false || user.verified === undefined) {
         console.log('Activation link: ', activationLink);

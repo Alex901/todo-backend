@@ -9,6 +9,7 @@ const authenticate = async (req, res, next) => {
 
   if (token) {
     try {
+      console.log('Token found, processing..')
       const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
      // console.log('Decoded token: ', decodedToken);
       const user = await User.findById(decodedToken.userId);
