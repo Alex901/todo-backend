@@ -9,7 +9,7 @@ const entriesRoutes = require('./routes/entry');
 const groupRoutes = require('./routes/group');
 const notificationRoutes = require('./routes/notification');
 const feedbackRoutes = require('./routes/feedback');
-const Todo = require('./models/Todo');
+const User = require('./models/User');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan'); //testing different loggers
@@ -24,6 +24,7 @@ const app = express();
 swaggerSetup(app);
 const PORT = process.env.PORT || 5000;
 const allowOrigins = [
+    'todo-backend-gkdo.onrender.com',
     'https://the-task-forge.netlify.app',
     'http://localhost:5173',
     'http://localhost:5000',
