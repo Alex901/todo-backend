@@ -8,11 +8,6 @@ const cors = require('cors');
 
 const router = express.Router();
 
-const corsOptions = { //This is not nice
-  allowedHeaders: ['User', 'Content-Type'],
-  credentials: true,
-};
-
 
 /**
  * @swagger
@@ -263,7 +258,7 @@ router.get('/todos', authenticate, async (req, res) => {
  *                   type: string
  *                   example: "Internal server error"
  */
-router.get('/todos/mobile', cors(corsOptions), async (req, res) => {
+router.get('/todos/mobile', async (req, res) => {
   console.log("mobile request works, hurray!!!");
   try {
     let entries;
