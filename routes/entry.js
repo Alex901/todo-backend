@@ -261,13 +261,19 @@ router.get('/todos', authenticate, async (req, res) => {
 router.get('/todos/mobile', async (req, res) => {
   console.log("mobile request works, hurray!!!");
   try {
-    let entries;
+    let entries = [];
     console.log("req.headers: ", req.headers.user);
-    const username = req.headers['user'];
 
-    if (username) {
+    const user = await User.findOne({ _id: req.headers.user });
+
+    if (user) {
       // If a username was provided, return users entries
-      entries = await Todo.find({ owner: username }).populate('inListNew');
+      entries = await Todo.find({
+        $or: [
+          { owner: user._id },
+          { owner: { $in: user.groups } }
+        ]
+      }).populate('inListNew'); //REMEMBER: observer and shared too
     } else {
       // If no username was provided, return limited entries: guest user
       entries = await Todo.find({ inList: { $eq: [] } });
