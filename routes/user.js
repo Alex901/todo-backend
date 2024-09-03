@@ -229,9 +229,11 @@ router.post('/create', async (req, res) => {
     const user = new User(req.body);
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '24h' });
-    user.activationToken = token;
-    await user.save();
+    if (!user.verified) {
+      const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '24h' });
+      user.activationToken = token;
+      await user.save();
+    }
 
     const activationLink = `${req.protocol}://${req.get('host')}/auth/activate/${token}`;
     const activationHtmlLink = `<a href="${activationLink}">activate your account</a>`;
