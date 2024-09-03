@@ -217,6 +217,13 @@ userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
 
+userSchema.pre('save', function(next) {
+  if(this.verified) {
+    this.activationToken = undefined;
+  }
+  next();
+})
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
