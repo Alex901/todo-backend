@@ -224,6 +224,53 @@ userSchema.pre('save', function(next) {
   next();
 })
 
+userSchema.pre('save', async function(next) {
+  const Group = require('./Group');
+  if (this.isModified('groups') || this.isNew) {
+    const user = this;
+    const validGroups = [];
+
+    for (const groupId of user.groups) {
+      const group = await Group.findById(groupId);
+      if (group && group.members.includes(user._id)) {
+        validGroups.push(groupId);
+      }
+    }
+
+    user.groups = validGroups;
+  }
+  next();
+});
+
+userSchema.pre('save', async function(next) {
+  const Group = require('./Group');
+  const user = this;
+
+  // Step 1: Check all groups and add the user to the groups they are a member of
+  const allGroups = await Group.find({});
+  const userGroupIds = new Set(user.groups.map(groupId => groupId.toString()));
+
+  for (const group of allGroups) {
+    if (group.members.some(member => member.member_id.equals(user._id))) {
+      if (!userGroupIds.has(group._id.toString())) {
+        user.groups.push(group._id);
+      }
+    }
+  }
+
+  // Step 2: Validate the user's groups
+  const validGroups = [];
+  for (const groupId of user.groups) {
+    const group = await Group.findById(groupId);
+    if (group && group.members.some(member => member.member_id.equals(user._id))) {
+      validGroups.push(groupId);
+    }
+  }
+
+  user.groups = validGroups;
+  next();
+});
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
