@@ -6,7 +6,11 @@ const { error } = require('winston');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
+
 require('dotenv').config();
+
+const isProduction = process.env.NODE_ENV === 'production';
+const clientDomain = isProduction ? '.habitforge.se' : 'localhost';
 
 router.post('/register', register);
 
@@ -99,7 +103,7 @@ router.post('/login', async (req, res) => {
         }
 
         if (!user.verified) {
-            return res.status(403).send({ error: 'Please verify you e-mail before logging in. \n Check your inbox for the verification e-mail.'});
+            return res.status(403).send({ error: 'Please verify you e-mail before logging in. \n Check your inbox for the verification e-mail.' });
         }
 
         // Authenticate the user
@@ -111,7 +115,12 @@ router.post('/login', async (req, res) => {
             console.log("User authenticated, creating token: !")
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
             console.log("Token: ", token);
-            res.cookie('token', token, { sameSite: 'None', secure: true, httpOnly: true });
+            res.cookie('token', token, {
+                domain: clientDomain,
+                sameSite: 'None',
+                secure: true,
+                httpOnly: true
+            });
             res.status(200).send({ message: 'User authenticated' });
         }
 
@@ -294,34 +303,34 @@ router.get('/checkLogin', async (req, res) => {
  */
 router.get('/activate/:token', async (req, res) => {
     const { token } = req.params;
-  
-    try {
-      // Find the user by the activation token
-      const user = await User.findOne({
-        activationToken: token,
-      });
-  
-      // Check if the token is valid and not expired
-      if (!user || user.activationTokenExpires < Date.now()) {
-        return res.status(400).json({ message: 'Invalid or expired activation link' });
-      }
-  
-      // Activate the user
-      user.verified = true;
-      user.activationToken = undefined;
-      user.__v = 1;
-      await user.save();
-  
-      const redirectUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://www.habitforge.se' 
-      : 'http://localhost:5173';
 
-      res.redirect(redirectUrl);
+    try {
+        // Find the user by the activation token
+        const user = await User.findOne({
+            activationToken: token,
+        });
+
+        // Check if the token is valid and not expired
+        if (!user || user.activationTokenExpires < Date.now()) {
+            return res.status(400).json({ message: 'Invalid or expired activation link' });
+        }
+
+        // Activate the user
+        user.verified = true;
+        user.activationToken = undefined;
+        user.__v = 1;
+        await user.save();
+
+        const redirectUrl = process.env.NODE_ENV === 'production'
+            ? 'https://www.habitforge.se'
+            : 'http://localhost:5173';
+
+        res.redirect(redirectUrl);
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Activation failed' });
+        console.error(err);
+        res.status(500).json({ message: 'Activation failed' });
     }
-  });
+});
 
 
 module.exports = router;
