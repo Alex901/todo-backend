@@ -228,9 +228,13 @@ router.post('/create', async (req, res) => {
 
     const user = new User(req.body);
     await user.save();
+    
+    let token;
 
     if (!user.verified) {
-      const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '24h' });
+      console.log('User not verified, sending activation email');
+      console.log('Key components: ', user._id, process.env.SECRET_KEY);
+      token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '24h' });
       user.activationToken = token;
       await user.save();
     }
