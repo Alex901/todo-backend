@@ -9,9 +9,6 @@ const router = express.Router();
 
 require('dotenv').config();
 
-const isProduction = process.env.NODE_ENV === 'production';
-const clientDomain = isProduction ? 'api.habitforge.se' : 'localhost';
-
 router.post('/register', register);
 
 /**
@@ -116,7 +113,6 @@ router.post('/login', async (req, res) => {
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
             console.log("Token: ", token);
             res.cookie('token', token, {
-                domain: clientDomain,
                 sameSite: 'Strict',
                 secure: true,
                 httpOnly: true
