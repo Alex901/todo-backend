@@ -10,7 +10,7 @@ const router = express.Router();
 require('dotenv').config();
 
 const isProduction = process.env.NODE_ENV === 'production';
-const clientDomain = isProduction ? '.habitforge.se' : 'localhost';
+const clientDomain = isProduction ? 'api.habitforge.se' : 'localhost';
 
 router.post('/register', register);
 
