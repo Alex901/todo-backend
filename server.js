@@ -28,7 +28,8 @@ const allowOrigins = [
     'https://the-task-forge.netlify.app',
     'http://localhost:5173',
     'http://localhost:5000',
-    'https://habitforge.se'
+    'https://habitforge.se',
+    'https://api.habitforge.se',
 ]
 const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
 const errorLogPath = path.join(__dirname, 'logs', 'error.log');
