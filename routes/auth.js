@@ -117,7 +117,7 @@ router.post('/login', async (req, res) => {
             console.log("Token: ", token);
             res.cookie('token', token, {
                 domain: clientDomain,
-                sameSite: 'None',
+                sameSite: 'Strict',
                 secure: true,
                 httpOnly: true
             });
