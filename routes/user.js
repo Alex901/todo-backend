@@ -819,12 +819,11 @@ router.patch('/addlist/:id', async (req, res) => {
     const { listName, description, visibility } = req.body.newListData;
     const nameLowerCase = listName.toLowerCase();
 
-    // Check if the list name already exists in the old data structure
-    const isListNameExistsInOldStructure = user.listNames.some(list => list.name === nameLowerCase);
+
     // Check if the list name already exists in the new data structure
     const isListNameExistsInNewStructure = await List.exists({ listName: nameLowerCase, owner: user._id });
 
-    if (isListNameExistsInOldStructure || isListNameExistsInNewStructure) {
+    if ( isListNameExistsInNewStructure) {
       return res.status(400).send({ error: 'List name already exists' });
     }
 
