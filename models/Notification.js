@@ -6,7 +6,7 @@ const notificationSchema = new mongoose.Schema({
         ref: 'User',
     },
     to: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: [mongoose.Schema.Types.ObjectId],
         ref: 'User',
         required: true
     },
@@ -22,7 +22,7 @@ const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['friend', 'group', 'message', 'feedback', 'other']
+        enum: ['friend', 'group', 'request-to-join-group', 'message', 'feedback', 'other']
     },
     subType: {
         type: String,

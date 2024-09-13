@@ -242,7 +242,9 @@ router.delete('/delete/:id', authenticate, async (req, res) => {
             return res.status(404).send({ message: 'Notification not found' });
         }
 
-        if (notification.to.toString() !== req.user._id.toString()) {
+        console.log("DEBUG -- Notification to ", notification.to.toString());
+
+        if (!notification.to.map(id => id.toString()).includes(req.user._id.toString())) {
             return res.status(403).send({ message: 'You do not have permission to delete this notification' });
         }
 
@@ -251,6 +253,38 @@ router.delete('/delete/:id', authenticate, async (req, res) => {
         res.status(200).send({ message: 'Notification deleted successfully' });
     } catch (error) {
         console.error('Error deleting notification: ', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+router.post('/request-to-join-group', authenticate, async (req, res) => {
+    const { from, to, group } = req.body;
+
+    if (!from || !to || !group) {
+        return res.status(400).send({ message: 'Missing required fields' });
+    }
+
+    try {
+        const user = await User.findById(from);
+        const groupDetails = await Group.findById(group);
+
+        if (!user || !groupDetails) {
+            return res.status(404).send({ message: 'User or Group not found' });
+        }
+
+        const notification = new Notification({
+            from,
+            to,
+            group,
+            type: 'request-to-join-group',
+            message: `${user.username} has requested to join your group ${groupDetails.name}`
+        });
+
+        await notification.save();
+
+        res.status(200).send({ message: 'Request to join group sent successfully' });
+    } catch (error) {
+        console.error('Error creating notification: ', error);
         res.status(500).send({ message: 'Internal server error' });
     }
 });
