@@ -84,49 +84,35 @@ const todoSchema = new mongoose.Schema({
     tags: {
         type: [{}],
         default: []
-    }, 
+    },
     totalTimeSpent: { //this is a bad name
         type: Number,
         default: 0
     },
-    daily: {
+    repeatable: {
         type: Boolean,
-        default : false
+        default: false
     },
-    repeat: {
+    repeatIntervall: {
         type: String,
         enum: ['', 'daily', 'weekly', 'monthly', 'yearly']
     },
     repeatDays: {
-        type: [Boolean],
-        validate: {
-            validator: function(v) {
-                return v.length === 7;
-            },
-            message: props => `${props.value} must be an array of length 7`
-        },
-        default: [false, false, false, false, false, false, false]
+        type: [String],
+        enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     },
     repeatDayOfWeek: {
         type: Number,
         min: 1,
         max: 7,
-        validate: {
-            validator: function(v) {
-                return Number.isInteger(v);
-            },
-            message: props => `${props.value} is not an integer`
-        }
     },
     repeatMonthlyOption: {
         type: String,
         enum: ['start', 'end'],
-        default: ''
     },
     repeatYearlyOption: {
         type: String,
         enum: ['start', 'end'],
-        default: ''
     },
     repeatUntil: {
         type: Date
@@ -136,12 +122,11 @@ const todoSchema = new mongoose.Schema({
     },
     repeatCount: {
         type: Number,
-        default: 0
+    },
+    repeatableCompletedDate: {
+        type: [Date],
     },
     repeatableEmoji: {
-        type: String
-    },
-    repeatableHelperText: {
         type: String
     },
     isToday: {
@@ -154,27 +139,43 @@ const todoSchema = new mongoose.Schema({
 }
 );
 
-//Makes sure that step.id exists
-todoSchema.pre('save', function(next) {
-  this.steps.forEach((step, index) => {
-    if (step.id === undefined || step.id === null) {
-      step.id = index+1;
-    }
-  });
-  next();
-});
-
-todoSchema.pre('findOneAndUpdate', function(next) {
-    const update = this.getUpdate();
-    if (update.steps) {
-      update.steps.forEach((step, index) => {
-        if (step.id === undefined || step.id === null) {
-          step.id = index+1;
-        }
-      });
+todoSchema.pre('save', function (next) {
+    if (!this.repeatable) {
+        this.repeatIntervall = undefined;
+        this.repeatDays = undefined;
+        this.repeatDayOfWeek = undefined;
+        this.repeatMonthlyOption = undefined;
+        this.repeatYearlyOption = undefined;
+        this.repeatUntil = undefined;
+        this.repeatTimes = undefined;
+        this.repeatCount = undefined;
+        this.repeatableCompletedDate = undefined;
+        this.repeatableEmoji = undefined;
     }
     next();
-  });
+});
+
+//Makes sure that step.id exists
+todoSchema.pre('save', function (next) {
+    this.steps.forEach((step, index) => {
+        if (step.id === undefined || step.id === null) {
+            step.id = index + 1;
+        }
+    });
+    next();
+});
+
+todoSchema.pre('findOneAndUpdate', function (next) {
+    const update = this.getUpdate();
+    if (update.steps) {
+        update.steps.forEach((step, index) => {
+            if (step.id === undefined || step.id === null) {
+                step.id = index + 1;
+            }
+        });
+    }
+    next();
+});
 
 const Todo = mongoose.model('Todo', todoSchema);
 
