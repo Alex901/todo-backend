@@ -91,20 +91,14 @@ const todoSchema = new mongoose.Schema({
     },
     repeatable: {
         type: Boolean,
-        default: false
     },
-    repeatIntervall: {
+    repeatInterval: {
         type: String,
-        enum: ['', 'daily', 'weekly', 'monthly', 'yearly']
+        enum: ['daily', 'weekly', 'monthly', 'yearly']
     },
     repeatDays: {
         type: [String],
         enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-    },
-    repeatDayOfWeek: {
-        type: Number,
-        min: 1,
-        max: 7,
     },
     repeatMonthlyOption: {
         type: String,
@@ -113,6 +107,9 @@ const todoSchema = new mongoose.Schema({
     repeatYearlyOption: {
         type: String,
         enum: ['start', 'end'],
+    },
+    repeatNotify: {
+        type: Boolean
     },
     repeatUntil: {
         type: Date
