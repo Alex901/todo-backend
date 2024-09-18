@@ -30,5 +30,6 @@ generate-token.js
 *.sw?
 
 
-# Ignore updateUser.js
+# Ignore testing files
 updateUser.js
+printIsToday.js

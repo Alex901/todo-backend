@@ -16,6 +16,8 @@ const morgan = require('morgan'); //testing different loggers
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const swaggerSetup = require('./swagger');
+const scheduler = require('./utils/scheduler');
+
 
 
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'access.log'), { flags: 'a' });
