@@ -2,6 +2,7 @@ const Todo = require('../models/Todo');
 const List = require('../models/List');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const { isDoStatement } = require('typescript');
 
 async function checkAndUpdateIsToday() {
     console.log('Running checkAndUpdateIsToday job');
@@ -68,16 +69,24 @@ async function checkAndUpdateIsToday() {
                 console.log('Checking repeatable task:', task.task);
                 if (task.repeatInterval === 'daily') {
                     isToday = true;
+                    resetDailyTask(task);
                 } else if (task.repeatInterval === 'weekly') {
                     if (task.repeatDays.includes(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek])) {
                         isToday = true;
+                        resetDailyTask(task);
                     }
                 } else if (task.repeatInterval === 'monthly') {
                     isToday = (task.repeatMonthlyOption === 'start' && dayOfMonth === 1) ||
                         (task.repeatMonthlyOption === 'end' && dayOfMonth === new Date(today.getFullYear(), month + 1, 0).getDate());
+                    if (isToday) {
+                        resetDailyTask(task);
+                    }
                 } else if (task.repeatInterval === 'yearly') {
                     isToday = (task.repeatYearlyOption === 'start' && month === 0 && dayOfMonth === 1) ||
                         (task.repeatYearlyOption === 'end' && month === 11 && dayOfMonth === 31);
+                    if (isToday) {
+                        resetDailyTask(task);
+                    }
                 }
             }
 
@@ -101,6 +110,39 @@ async function populateTodayList(todayList, tasks) {
             }
         }
     }
+}
+
+async function resetDailyTask(task) {
+
+    const previousTotalDuration = task.repeatableCompleted.reduce((acc, entry) => acc + entry.duration, 0);
+
+    const currentDuration = task.totalTimeSpent - previousTotalDuration;
+
+    if (task.repeatable) {
+
+        if (task.startedAt && !task.completed) { //Task was started but not completed
+            tesk.startedAt = null;
+            task.created = new Date();
+            task.isStarted = false;
+        } else if (task.completed) { //task was completed
+            task.repeatableCompleted.push({
+                startTime: task.started,
+                completionTime: task.completed,
+                duration: currentDuration
+            });
+            task.repeatStreak++;
+            task.startedAt = null;
+            task.completed = null;
+            task.created = new Date();
+            task.isStarted = false;
+            task.isDone = false;
+        } else { //Task was not started
+            task.repeatStreak = 0;
+            task.created = new Date();
+        }
+        await task.save();
+    }
+
 }
 
 module.exports = {

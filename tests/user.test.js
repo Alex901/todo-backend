@@ -118,6 +118,7 @@ describe('DELETE /users/delete-user/:id', () => {
     await User.deleteMany();
     await List.deleteMany();
     await Todo.deleteMany();
+    await Group.deleteMany();
   });
 
   it('Delete user and cleanup, single group member', async () => {
