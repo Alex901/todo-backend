@@ -11,32 +11,36 @@ async function checkAndUpdateIsToday() {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-
-
     const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     const dayOfMonth = today.getDate(); // 1 to 31
     const month = today.getMonth(); // 0 = January, 1 = February, ..., 11 = December
 
     const users = await User.find();
+    console.log('\x1b[31m%s\x1b[0m', 'Users:', users.length);
 
     for (const user of users) {
-        const userGroups = user.groups;
+        console.log('\x1b[31m%s\x1b[0m', 'Checking User:', user.username);
         const ownerId = user._id;
+        const todayList = await List.findOne({ owner: ownerId, listName: 'today' });
+
+        console.log('\x1b[31m%s\x1b[0m', 'Owner ID:', ownerId);
+        console.log('\x1b[31m%s\x1b[0m', 'User Groups:', user.groups);
+
         const tasks = await Todo.find({
             $or: [
                 { owner: ownerId },
-                { owner: { $in: userGroups } }
+                { owner: { $in: user.groups } }
             ]
         });
 
         console.log("\x1b[31mDEBUG: found tasks for user:", user.username, "tasks:", tasks.length, "\x1b[0m");
+        // tasks.forEach((task, index) => {
+        //     console.log(`\x1b[33mDEBUG: task ${index}:`, task.task, "\x1b[0m");
+        // });
 
-        const todayList = await List.findOne({ owner: ownerId, listName: 'today' });
-        //Remember to remove owner etc
-
+        let index = 0;
         for (const task of tasks) {
-            console.log('Checking task:', task.task);
-            task.isToday = false;
+            console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
             let isToday = false;
 
             if (!task.dueDate && !task.repeatable) {
@@ -70,29 +74,44 @@ async function checkAndUpdateIsToday() {
                 if (task.repeatInterval === 'daily') {
                     isToday = true;
                     resetDailyTask(task);
+                    await task.save();
+                    continue;
                 } else if (task.repeatInterval === 'weekly') {
                     if (task.repeatDays.includes(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek])) {
                         isToday = true;
                         resetDailyTask(task);
+                        await task.save();
+                        continue;
                     }
                 } else if (task.repeatInterval === 'monthly') {
                     isToday = (task.repeatMonthlyOption === 'start' && dayOfMonth === 1) ||
                         (task.repeatMonthlyOption === 'end' && dayOfMonth === new Date(today.getFullYear(), month + 1, 0).getDate());
                     if (isToday) {
                         resetDailyTask(task);
+                        await task.save();
+                        continue;
                     }
                 } else if (task.repeatInterval === 'yearly') {
                     isToday = (task.repeatYearlyOption === 'start' && month === 0 && dayOfMonth === 1) ||
                         (task.repeatYearlyOption === 'end' && month === 11 && dayOfMonth === 31);
                     if (isToday) {
                         resetDailyTask(task);
+                        await task.save();
+                        continue;
                     }
                 }
             }
-
-            task.isToday = isToday;
-            await task.save();
+            // await task.save();
+            // task.isToday = isToday;
+            // try {
+            //     await task.save();
+            // } catch (error) {
+            //     console.log("\x1b[31mError saving task:", task.task, "\x1b[0m");
+            //     console.log(error);
+            // }
+            index++;
         }
+        console.log("Done porcessing tasks for user:", user.username, "tasks:", tasks.length, "\x1b[0m");
         populateTodayList(todayList, tasks);
     }
 }
@@ -100,47 +119,56 @@ async function checkAndUpdateIsToday() {
 async function populateTodayList(todayList, tasks) {
     console.log('Populating today list');
     console.log('Today list:', todayList._id);
+    console.log('Tasks:', tasks.length);
     for (const task of tasks) {
         //remove everything from today list
         task.inListNew = task.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
         if (task.isToday === true) {
+            console.log("\x1b[34mAdding task to today list:", task.task, "\x1b[0m");
             if (!task.inListNew.includes(todayList._id)) {
                 task.inListNew.push(todayList._id);
                 await task.save();
+                continue;
             }
         }
     }
 }
 
 async function resetDailyTask(task) {
-
-    const previousTotalDuration = task.repeatableCompleted.reduce((acc, entry) => acc + entry.duration, 0);
-
-    const currentDuration = task.totalTimeSpent - previousTotalDuration;
-
+    console.log("DEBUG -- Resetting daily task:", task.task)
     if (task.repeatable) {
-
-        if (task.startedAt && !task.completed) { //Task was started but not completed
-            tesk.startedAt = null;
+        console.log("DEBUG -- Task is repeatable -- proceeding:")
+        if (task.started && !task.completed) { //Task was started but not completed
+            console.log("DEBUG -- Task was started but not completed");
             task.created = new Date();
             task.isStarted = false;
+            task.totalTimeSpent = 0;
+            task.started = null;
+            task.repeatStreak = 0;
         } else if (task.completed) { //task was completed
+            console.log("DEBUG -- Task was completed");
             task.repeatableCompleted.push({
                 startTime: task.started,
                 completionTime: task.completed,
-                duration: currentDuration
+                duration: task.totalTimeSpent
             });
-            task.repeatStreak++;
-            task.startedAt = null;
-            task.completed = null;
+            if (task.repeatStreak === undefined) {
+                task.repeatStreak = 1;
+            } else {
+                task.repeatStreak++;
+            }
             task.created = new Date();
             task.isStarted = false;
             task.isDone = false;
+            task.totalTimeSpent = 0;
+            task.completed = null;
+            task.started = null;
         } else { //Task was not started
+            console.log("DEBUG -- Task was started but not completed");
             task.repeatStreak = 0;
             task.created = new Date();
         }
-        await task.save();
+        task.isToday = true;
     }
 
 }

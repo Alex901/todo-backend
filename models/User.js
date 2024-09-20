@@ -165,8 +165,12 @@ const userSchema = new mongoose.Schema(
           type: Boolean,
           default: false,
         },
-      }
-    }, 
+      },
+      currency: {
+        type: Number,
+        default: 0,
+      },
+    },
     activationToken: {
       type: String,
       default: '',
@@ -178,7 +182,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.post('save', function(doc, next) {
+userSchema.post('save', function (doc, next) {
   // console.log("Entering new user post save")
   if (doc.__v === 0) { // Check if the document is new
     const defaultLists = [
@@ -217,14 +221,14 @@ userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-userSchema.pre('save', function(next) {
-  if(this.verified) {
+userSchema.pre('save', function (next) {
+  if (this.verified) {
     this.activationToken = undefined;
   }
   next();
 })
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   const Group = require('./Group');
   if (this.isModified('groups') || this.isNew) {
     const user = this;
@@ -242,7 +246,7 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   const Group = require('./Group');
   const user = this;
 

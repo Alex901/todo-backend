@@ -120,6 +120,9 @@ const todoSchema = new mongoose.Schema({
     repeatCount: {
         type: Number,
     },
+    repeatStreak: {
+        type: Number,
+    },
     repeatableCompleted: [{
         startTime: {
             type: Date,
@@ -132,7 +135,8 @@ const todoSchema = new mongoose.Schema({
         duration: {
             type: Number, // Duration in minutes
             required: true
-        }
+        },
+
     }],
     repeatableEmoji: {
         type: String
