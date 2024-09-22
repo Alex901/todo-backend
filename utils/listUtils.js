@@ -15,6 +15,9 @@ async function checkAndUpdateIsToday() {
     const dayOfMonth = today.getDate(); // 1 to 31
     const month = today.getMonth(); // 0 = January, 1 = February, ..., 11 = December
 
+    console.log('Today:', dayOfWeek, ' -- ', today);
+    console.log('Tomorrow:', tomorrow); 
+
     const users = await User.find();
     console.log('\x1b[31m%s\x1b[0m', 'Users:', users.length);
 
@@ -40,76 +43,89 @@ async function checkAndUpdateIsToday() {
 
         let index = 0;
         for (const task of tasks) {
-            console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
+           // console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
             let isToday = false;
 
-            if (!task.dueDate && !task.repeatable) {
-                console.log('Task has no deadline and is not repeatable:', task.task);
-                task.isToday = false;
-                continue;
-            }
-
-            // Check deadline
-            if (!task.estimatedTime) {
-                // Case 1: No estimatedTime
-                if (task.dueDate >= today && task.dueDate < tomorrow) {
-                    console.log('Found a task with deadline today:', task.task);
-                    isToday = true;
-                }
-            } else {
-                // Case 2: With estimatedTime
-                const estimatedTimeInMs = task.estimatedTime * 60 * 1000;
-                const adjustedDeadline = new Date(task.dueDate.getTime() - estimatedTimeInMs);
-                console.log("\x1b[38;5;214mAdjusted deadline:", adjustedDeadline, "\x1b[0m");
-
-                if (adjustedDeadline >= today && adjustedDeadline < tomorrow) {
-                    console.log('Found a task with adjusted deadline today:', task.task);
-                    isToday = true;
-                }
-            }
-
-            // Check repeatable parameters
-            if (task.repeatable && (!task.repeatUntil || today <= task.repeatUntil)) {
+            // Base case: Check if the task is repeatable
+            if (task.repeatable) {
                 console.log('Checking repeatable task:', task.task);
-                if (task.repeatInterval === 'daily') {
-                    isToday = true;
-                    resetDailyTask(task);
-                    await task.save();
-                    continue;
-                } else if (task.repeatInterval === 'weekly') {
-                    if (task.repeatDays.includes(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek])) {
+                if (!task.repeatUntil || today <= task.repeatUntil) {
+                    if (task.repeatInterval === 'daily') {
+                      //  console.log("\x1b[32mTask is daily\x1b[0m");
                         isToday = true;
                         resetDailyTask(task);
-                        await task.save();
-                        continue;
+                       
+                        
+                    } else if (task.repeatInterval === 'weekly') {
+                        console.log("\x1b[32mTask is Weekly\x1b[0m");
+                        if (task.repeatDays.includes(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek])) {
+                           // console.log("\x1b[32m.. and should reset today today\x1b[0m");
+                            isToday = true;
+                            resetDailyTask(task);
+                            
+                          
+                        }
+                    } else if (task.repeatInterval === 'monthly') {
+                       // console.log("\x1b[32mTask is monthly\x1b[0m");
+                        isToday = (task.repeatMonthlyOption === 'start' && dayOfMonth === 1) ||
+                            (task.repeatMonthlyOption === 'end' && dayOfMonth === new Date(today.getFullYear(), month + 1, 0).getDate());
+                        if (isToday) {
+                            resetDailyTask(task);
+                            isToday = true;
+                          
+                            
+                        }
+                    } else if (task.repeatInterval === 'yearly') {
+                       // console.log("\x1b[32mTask is yearly\x1b[0m");
+                        isToday = (task.repeatYearlyOption === 'start' && month === 0 && dayOfMonth === 1) ||
+                            (task.repeatYearlyOption === 'end' && month === 11 && dayOfMonth === 31);
+                        if (isToday) {
+                            isToday = true;
+                            resetDailyTask(task);
+                        }
                     }
-                } else if (task.repeatInterval === 'monthly') {
-                    isToday = (task.repeatMonthlyOption === 'start' && dayOfMonth === 1) ||
-                        (task.repeatMonthlyOption === 'end' && dayOfMonth === new Date(today.getFullYear(), month + 1, 0).getDate());
-                    if (isToday) {
-                        resetDailyTask(task);
-                        await task.save();
-                        continue;
+                } else {
+                   // console.log('Task has expired:', task.task);
+                    isToday = false;
+                }
+            } else {
+                // Non-repeatable tasks
+                if (!task.dueDate) {
+                    console.log('Task has no deadline and is not repeatable:', task.task);
+                    isToday = false;
+                    
+                }
+
+                if(task.isDone){
+                    isToday = false; 
+                    continue;
+                }
+
+                if (task.estimatedTime) {
+                    // Task has a due date and an estimated time
+                    const estimatedTimeInMs = task.estimatedTime * 60 * 1000;
+                    const adjustedDeadline = new Date(task.dueDate.getTime() - estimatedTimeInMs);
+                    console.log("\x1b[31mAdjusted deadline:", adjustedDeadline, "\x1b[0m");
+                    if (adjustedDeadline >= today && adjustedDeadline < tomorrow) {
+                        console.log("\x1b[38;5;214mFound a task with adjusted deadline today:", task.task, "Adjusted deadline:", adjustedDeadline, "\x1b[0m");
+                        isToday = true;
+                    } else {
+                        console.log("\x1b[33mFound a task with adjusted deadline but it does not fall within today:", task.task, "Adjusted deadline:", adjustedDeadline, "\x1b[0m");
+                        isToday = false;
                     }
-                } else if (task.repeatInterval === 'yearly') {
-                    isToday = (task.repeatYearlyOption === 'start' && month === 0 && dayOfMonth === 1) ||
-                        (task.repeatYearlyOption === 'end' && month === 11 && dayOfMonth === 31);
-                    if (isToday) {
-                        resetDailyTask(task);
-                        await task.save();
-                        continue;
+                } else {
+                    // Task has a due date but no estimated time
+                    if (task.dueDate >= today && task.dueDate < tomorrow) {
+                        console.log('Found a task with deadline today:', task.task);
+                        isToday = true;
+                    } else {
+                        isToday = false;
                     }
                 }
             }
-            // await task.save();
-            // task.isToday = isToday;
-            // try {
-            //     await task.save();
-            // } catch (error) {
-            //     console.log("\x1b[31mError saving task:", task.task, "\x1b[0m");
-            //     console.log(error);
-            // }
             index++;
+            task.isToday = isToday;
+            await task.save();
         }
         console.log("Done porcessing tasks for user:", user.username, "tasks:", tasks.length, "\x1b[0m");
         populateTodayList(todayList, tasks);
@@ -135,18 +151,16 @@ async function populateTodayList(todayList, tasks) {
 }
 
 async function resetDailyTask(task) {
-    console.log("DEBUG -- Resetting daily task:", task.task)
-    if (task.repeatable) {
-        console.log("DEBUG -- Task is repeatable -- proceeding:")
-        if (task.started && !task.completed) { //Task was started but not completed
+    if (task.repeatable) { //just a precaution
+        if (task.isStarted && !task.isDone) { //Task was started but not completed
             console.log("DEBUG -- Task was started but not completed");
             task.created = new Date();
             task.isStarted = false;
             task.totalTimeSpent = 0;
             task.started = null;
             task.repeatStreak = 0;
-        } else if (task.completed) { //task was completed
-            console.log("DEBUG -- Task was completed");
+        } else if (task.isDone) { //task was completed
+            console.log("DEBUG -- Task was completed -- reseting the task");
             task.repeatableCompleted.push({
                 startTime: task.started,
                 completionTime: task.completed,
@@ -164,11 +178,10 @@ async function resetDailyTask(task) {
             task.completed = null;
             task.started = null;
         } else { //Task was not started
-            console.log("DEBUG -- Task was started but not completed");
+            console.log("DEBUG -- Task was not started and thus not completed -- reset repeatStreak");
             task.repeatStreak = 0;
             task.created = new Date();
         }
-        task.isToday = true;
     }
 
 }

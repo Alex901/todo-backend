@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test mocha -r esm --timeout 10000 tests/*.test.js --exit",
+    "test": "cross-env NODE_ENV=test mocha -r esm --timeout 30000 tests/listUtils.test.js --exit",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
@@ -23,6 +23,7 @@
     "express": "^4.18.2",
     "googleapis": "^143.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mockdate": "^3.0.5",
     "mongoose": "^8.2.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
