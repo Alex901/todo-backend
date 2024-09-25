@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
-      default: '',
+      default: 'https://storage.googleapis.com/profile-pictures-bucket1/Technology-icon2.png',
     },
     email: {
       type: String,
@@ -168,8 +168,14 @@ const userSchema = new mongoose.Schema(
       },
       currency: {
         type: Number,
-        default: 0,
+        default: 5,
+        required: true,
       },
+      score: {
+        type: Number,
+        default: 0,
+        required: true,
+      }
     },
     activationToken: {
       type: String,

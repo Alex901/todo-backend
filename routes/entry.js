@@ -5,6 +5,7 @@ const logger = require('../middlewares/logger');
 const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
 const cors = require('cors');
+const listUtils = require('../utils/listUtils');
 
 const router = express.Router();
 

@@ -92,14 +92,16 @@ async function checkAndUpdateIsToday() {
                 // Non-repeatable tasks
                 if (!task.dueDate) {
                     // console.log('Task has no deadline and is not repeatable:', task.task);
-                     isToday = false;
+                     task.isToday = false;
                      index++;
+                     await task.save();
                      continue; 
                  }
  
                  if(task.isDone){
-                     isToday = false; 
+                     task.isToday = false; 
                      index++; 
+                     await task.save();
                      continue;
                  }
 
@@ -111,6 +113,7 @@ async function checkAndUpdateIsToday() {
                     if (adjustedDeadline >= today && adjustedDeadline < tomorrow) {
                     //    console.log("\x1b[38;5;214mFound a task with adjusted deadline today:", task.task, "Adjusted deadline:", adjustedDeadline, "\x1b[0m");
                         isToday = true;
+                        task.isStarted = false;
                     } else {
                      //  console.log("\x1b[33mFound a task with adjusted deadline but it does not fall within today:", task.task, "Adjusted deadline:", adjustedDeadline, "\x1b[0m");
                         isToday = false;
@@ -120,6 +123,8 @@ async function checkAndUpdateIsToday() {
                     if (task.dueDate >= today && task.dueDate < tomorrow) {
                       //  console.log('Found a task with deadline today:', task.task);
                         isToday = true;
+                        task.isStarted = false;
+
                     } else {
                         isToday = false;
                     }
@@ -139,12 +144,14 @@ async function checkAndUpdateIsToday() {
 }
 
 async function populateTodayList(todayList, tasks) {
-  // console.log('Populating today list');
+    // console.log('Populating today list');
    // console.log('Today list:', todayList._id);
    // console.log('Tasks:', tasks.length);
     for (const task of tasks) {
         //remove everything from today list
+        //console.log('DEBUG -- todaysList and task inListnew:', task.inListNew, 'list:', todayList._id.toString());
         task.inListNew = task.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
+        //console.log('DEBUG -- inListNew -- post clearing:', task.inListNew, 'task:', task.task);
         if (task.isToday === true) {
         //    console.log("\x1b[34mAdding task to today list:", task.task, "\x1b[0m");
             if (!task.inListNew.includes(todayList._id)) {
@@ -152,7 +159,8 @@ async function populateTodayList(todayList, tasks) {
                 await task.save();
                 continue;
             }
-        }
+        } 
+        await task.save();
     }
 }
 
