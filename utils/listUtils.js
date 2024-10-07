@@ -85,7 +85,7 @@ async function checkAndUpdateIsToday() {
                         }
                     }
                 } else {
-                //    console.log('Task has expired:', task.task);
+                    console.log('Task has expired, dont reset but remove from today:', task.task);
                     isToday = false;
                 }
             } else {

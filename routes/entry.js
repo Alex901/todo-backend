@@ -95,7 +95,7 @@ router.post('/', async (req, res) => {
         tagNames.push(tag.label);
       }
       listsToUpdate = await List.find({ _id: { $in: req.body.inListNew } });
-      console.log("listsToUpdate: ", listsToUpdate);
+      // console.log("listsToUpdate: ", listsToUpdate);
       for (const list of listsToUpdate) {
         if (Array.isArray(list.tags)) {
           for (const tag of list.tags) {
@@ -452,7 +452,7 @@ router.delete('/delete/:taskId', async (req, res) => {
 
     if (tagLabels.length > 0) {
       const listsToUpdate = await List.find({ _id: { $in: entryToDelete.inListNew } });
-      console.log("listsToUpdate: ", listsToUpdate);
+      // console.log("listsToUpdate: ", listsToUpdate);
 
       for (const list of listsToUpdate) {
         if (Array.isArray(list.tags)) {
