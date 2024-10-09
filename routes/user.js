@@ -66,7 +66,7 @@ router.get('/auth', authenticate, (req, res) => {
 });
 
 router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'), async (req, res) => {
-  console.log("Service Account ", serviceAccount);
+  // console.log("Service Account ", serviceAccount);
   if (!req.file) {
     res.status(400).send('No file uploaded.');
     return;
@@ -105,7 +105,7 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
   blobStream.end(req.file.buffer);
 });
 router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'), async (req, res) => {
-  console.log("Service Account ", serviceAccount);
+  // console.log("Service Account ", serviceAccount);
   if (!req.file) {
     res.status(400).send('No file uploaded.');
     return;
@@ -207,11 +207,11 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
  *                   example: "Internal server error"
  */
 router.post('/create', async (req, res) => {
-  console.log("Req body: ", req.body);
+  // console.log("Req body: ", req.body);
   try {
     // Check if username is null
     if (!req.body.username) {
-      console.log(req.body.username);
+      // console.log(req.body.username);
       return res.status(400).send({ error: 'Username is required' });
     }
 
@@ -232,8 +232,8 @@ router.post('/create', async (req, res) => {
     let token;
 
     if (!user.verified) {
-      console.log('User not verified, sending activation email');
-      console.log('Key components: ', user._id, process.env.SECRET_KEY);
+      // console.log('User not verified, sending activation email');
+      // console.log('Key components: ', user._id, process.env.SECRET_KEY);
       token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '24h' });
       user.activationToken = token;
       await user.save();
@@ -247,7 +247,7 @@ router.post('/create', async (req, res) => {
       await sendMail(user.email, 'You are invited!', `You have been invited to https://habitforge.se. <br> Your <strong> username </strong> is <u> ${user.username} </u> and your <strong> password </strong> is <u> ${req.body.password}. </u> <hr> Upon first login you are able to change your credentials!`);
     } else {
       if (user.verified === false || user.verified === undefined) {
-        console.log('Activation link: ', activationLink);
+        // console.log('Activation link: ', activationLink);
         await sendMail(user.email, 'Activate your account', `Please click the following link to ${activationHtmlLink}.`);
       }
     }
@@ -584,7 +584,7 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
  */
 router.delete('/delete-user/:id', async (req, res) => {
   try {
-    console.log('DEBUG -- Delete user:', req.params);
+    // console.log('DEBUG -- Delete user:', req.params);
     const userId = req.params.id;
     const user = await User.findByIdAndDelete(userId);
 

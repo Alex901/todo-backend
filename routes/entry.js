@@ -360,7 +360,7 @@ router.get('/todos/mobile', async (req, res) => {
  *                   example: "Internal server error"
  */
 router.patch('/done', async (req, res) => {
-  console.log(req.body);
+  // console.log(req.body);
   try {
     const { taskId } = req.body;
 
@@ -458,7 +458,7 @@ router.delete('/delete/:taskId', async (req, res) => {
         if (Array.isArray(list.tags)) {
           for (const tag of list.tags) {
             if (tagLabels.includes(tag.label)) {
-              console.log("Decreasing uses for tag: ", tag.label);
+              // console.log("Decreasing uses for tag: ", tag.label);
               tag.uses = Math.max(tag.uses - 1, 0); // Ensure uses doesn't go below 0
             }
           }
@@ -759,7 +759,7 @@ router.patch('/edit', async (req, res) => {
 router.patch('/update', async (req, res) => {
   try {
     const update = req.body;
-    console.log("update: ", update);
+    // console.log("update: ", update);
     // Update all documents in the Todo collection
     await Todo.updateMany({}, update);
 

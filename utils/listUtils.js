@@ -26,6 +26,11 @@ async function checkAndUpdateIsToday() {
         const ownerId = user._id;
         const todayList = await List.findOne({ owner: ownerId, listName: 'today' });
 
+        if(!users || !todayList){
+            // console.log('No users or today list found');
+            return;
+        }
+
       // console.log('\x1b[31m%s\x1b[0m', 'Owner ID:', ownerId);
        // console.log('\x1b[31m%s\x1b[0m', 'User Groups:', user.groups);
 
@@ -35,6 +40,11 @@ async function checkAndUpdateIsToday() {
                 { owner: { $in: user.groups } }
             ]
         });
+
+        if (!tasks || tasks.length === 0) {
+            // console.log(`No tasks found for user: ${user.username}`);
+            continue;
+        }
 
     //    console.log("\x1b[31mDEBUG: found tasks for user:", user.username, "tasks:", tasks.length, "\x1b[0m");
         // tasks.forEach((task, index) => {
@@ -62,30 +72,25 @@ async function checkAndUpdateIsToday() {
                         //    console.log("\x1b[32m.. and should reset today today\x1b[0m");
                             isToday = true;
                             resetDailyTask(task);
-                            
-                          
                         }
                     } else if (task.repeatInterval === 'monthly') {
-                    //    console.log("\x1b[32mTask is monthly\x1b[0m");
+                    //  console.log("\x1b[32mTask is monthly\x1b[0m");
                         isToday = (task.repeatMonthlyOption === 'start' && dayOfMonth === 1) ||
                             (task.repeatMonthlyOption === 'end' && dayOfMonth === new Date(today.getFullYear(), month + 1, 0).getDate());
+                            // console.log(`\x1b[33mTask: ${task.task}, isToday: ${isToday}\x1b[0m`);
                         if (isToday) {
                             resetDailyTask(task);
-                            isToday = true;
-                          
-                            
                         }
                     } else if (task.repeatInterval === 'yearly') {
                     //    console.log("\x1b[32mTask is yearly\x1b[0m");
                         isToday = (task.repeatYearlyOption === 'start' && month === 0 && dayOfMonth === 1) ||
                             (task.repeatYearlyOption === 'end' && month === 11 && dayOfMonth === 31);
                         if (isToday) {
-                            isToday = true;
                             resetDailyTask(task);
                         }
                     }
                 } else {
-                    console.log('Task has expired, dont reset but remove from today:', task.task);
+                    // console.log('Task has expired, dont reset but remove from today:', task.task);
                     isToday = false;
                 }
             } else {
@@ -132,34 +137,42 @@ async function checkAndUpdateIsToday() {
 
                
             }
-            
+            // console.log(`\x1b[31mTask: ${task.task}, isToday: ${isToday}\x1b[0m`);
             task.isToday = isToday;
             await task.save();
+            // console.log(`\x1b[32mTask: ${task.task}, isToday: ${task.isToday}\x1b[0m`);
+
+            // const savedTask = await Todo.findById(task._id);
+            // console.log(`\x1b[32mSaved Task: ${savedTask.task}, isToday: ${savedTask.isToday}\x1b[0m`);
 
             index++;
         }
        // console.log("Done porcessing tasks for user:", user.username, "tasks:", tasks.length, "\x1b[0m");
-        populateTodayList(todayList, tasks);
+        await populateTodayList(todayList, tasks, user.username);
     }
 }
 
-async function populateTodayList(todayList, tasks) {
-    // console.log('Populating today list');
-   // console.log('Today list:', todayList._id);
-   // console.log('Tasks:', tasks.length);
+async function populateTodayList(todayList, tasks, username) {
+    // console.log('Populating today list for user', username);
+
+    // for (const task of tasks) {
+    //     if (task.task === "Monthly Task End 3") {
+    //         console.log(`Monthly Task End 3: ${task}`);
+    //     }
+    // }
+
     for (const task of tasks) {
-        //remove everything from today list
-        //console.log('DEBUG -- todaysList and task inListnew:', task.inListNew, 'list:', todayList._id.toString());
+        // Remove everything from today list
         task.inListNew = task.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
-        //console.log('DEBUG -- inListNew -- post clearing:', task.inListNew, 'task:', task.task);
-        if (task.isToday === true) {
-        //    console.log("\x1b[34mAdding task to today list:", task.task, "\x1b[0m");
+
+        if (task.isToday) {
+            // console.log("\x1b[34mAdding task to today list:", task.task, "\x1b[0m");
             if (!task.inListNew.includes(todayList._id)) {
                 task.inListNew.push(todayList._id);
-                await task.save();
-                continue;
             }
-        } 
+        }
+
+        // Save the task only if it was modified
         await task.save();
     }
 }

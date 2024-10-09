@@ -21,7 +21,7 @@ describe('List Utils', function () {
 
         userA = await User.findById(userA._id).populate('myLists');
         todayList = userA.myLists.find(list => list.listName === 'today');
-        console.log('Today List for userA:', todayList);
+        // console.log('Today List for userA:', todayList);
 
         // Create a group and invite user B
         group = new Group({ name: 'Test Group', owner: userA._id, members: [{ member_id: userA._id }, { member_id: userB._id }] });
@@ -239,7 +239,7 @@ describe('List Utils', function () {
         });
 
         tasks.monthlyEnd2 = new Todo({
-            task: 'Monthly Task End',
+            task: 'Monthly Task End 2',
             owner: userA._id,
             inListNew: [list._id],
             repeatable: true,
@@ -270,7 +270,7 @@ describe('List Utils', function () {
         });
 
         tasks.monthlyEnd3 = new Todo({
-            task: 'Monthly Task End',
+            task: 'Monthly Task End 3',
             owner: userA._id,
             inListNew: [list._id],
             repeatable: true,
@@ -525,8 +525,12 @@ describe('List Utils', function () {
     it('Check repeatable weekly tasks on Friday', async function () {
         mockdate.set('2028-06-09'); // Set to a Friday
         await checkAndUpdateIsToday();
+
+
     
         let updatedTask = await Todo.findById(tasks.weekly3._id);
+        // console.log('Today list._id', todayList._id);
+        // console.log('Updated Task (weekly3):', updatedTask);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
@@ -537,7 +541,7 @@ describe('List Utils', function () {
     it('Check repeatable weekly tasks on Sunday', async function () {
         mockdate.set('2028-06-11'); // Set to a Sunday
         await checkAndUpdateIsToday();
-    
+
         // Ensure no tasks are updated
         let updatedTask = await Todo.findById(tasks.weekly1._id);
         expect(updatedTask.isToday).to.be.false;
@@ -592,20 +596,29 @@ describe('List Utils', function () {
     it('Check repeatable monthly tasks at the end of the month', async function () {
         mockdate.set('2028-06-30'); // Set to the end of the month
         await checkAndUpdateIsToday();
-    
+
+        // console.log('Today list._id', todayList._id);
+
+        //Works
         let updatedTask = await Todo.findById(tasks.monthlyEnd._id);
+        // console.log('Updated Task (monthlyEnd):', updatedTask);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.false;
     
+        //Works
         updatedTask = await Todo.findById(tasks.monthlyEnd2._id);
+        // console.log('Updated Task (monthlyEnd2):', updatedTask);
         expect(updatedTask.inListNew).to.not.include(todayList._id);
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.isStarted).to.be.true;
         expect(updatedTask.isDone).to.be.true;
-    
+        
+        //A task is today, should be reset and placed in the today list but as it was not completed
+        //in the prior month, the streak should be reset
         updatedTask = await Todo.findById(tasks.monthlyEnd3._id);
+        // console.log('Updated Task (monthlyEnd3):', updatedTask);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false; // Reset for the new month
@@ -724,4 +737,19 @@ describe('List Utils', function () {
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.inListNew).to.not.include(todayList._id);
     });
+
+    it('Check when there are no tasks for a user', async function () {
+        await Todo.deleteMany({ owner: userA._id }); // Ensure there are no tasks for userA
+        await checkAndUpdateIsToday();
+        // No assertions needed, just ensure no errors are thrown
+    });
+
+    it('Check when there are no users or today list', async function () {
+        await User.deleteMany(); // Ensure there are no users
+        await List.deleteMany(); // Ensure there are no lists
+        await checkAndUpdateIsToday();
+        // No assertions needed, just ensure no errors are thrown
+    });
+
+
 });

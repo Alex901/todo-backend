@@ -147,7 +147,7 @@ describe('DELETE /users/delete-user/:id', () => {
   
     group.members.push({ member_id: anotherUser._id, role: 'edit' });
     await group.save();
-    console.log('DEBUG -- Groups in delete user test before delete: ', group);
+    // console.log('DEBUG -- Groups in delete user test before delete: ', group);
   
     // Call the Delete user endpoint
     await request(app)
@@ -162,13 +162,13 @@ describe('DELETE /users/delete-user/:id', () => {
     expect(lists.length).to.equal(0);
   
     const todos = await Todo.find({ owner: testUser._id });
-    console.log('Todos after user deletion:', todos); // Add logging here
+    // console.log('Todos after user deletion:', todos); // Add logging here
     expect(todos.length).to.equal(0);
   
     // Verify that the group is not deleted
     const groupAfterDelete = await Group.findById(group._id);
-    console.log('DEBUG -- Groups in delete user test: ', groupAfterDelete);
-    console.log('Group after delete:', groupAfterDelete); // Add logging here
+    // console.log('DEBUG -- Groups in delete user test: ', groupAfterDelete);
+    // console.log('Group after delete:', groupAfterDelete); // Add logging here
     expect(groupAfterDelete).to.not.be.null;
   
     // Verify that the initial user is removed from the group
@@ -178,7 +178,7 @@ describe('DELETE /users/delete-user/:id', () => {
   
     // Verify that the todos for the group are not deleted
     const groupTodosAfterDelete = await Todo.find({ owner: group._id });
-    console.log('Group todos after delete:', groupTodosAfterDelete); // Add logging here
+    // console.log('Group todos after delete:', groupTodosAfterDelete); // Add logging here
     expect(groupTodosAfterDelete.length).to.equal(2); // Ensure group todos are not deleted
   });
 

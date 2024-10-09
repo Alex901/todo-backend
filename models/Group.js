@@ -88,7 +88,7 @@ const groupSchema = new mongoose.Schema({
 
 groupSchema.pre('save', async function (next) {
     // Lazy load User model to avoid circular dependency
-    console.log('Group Model pre save -- updating lists for users in group');
+    // console.log('Group Model pre save -- updating lists for users in group');
     const User = require('./User');
 
     if (this.isModified('members')) {

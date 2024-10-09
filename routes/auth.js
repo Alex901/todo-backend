@@ -77,7 +77,7 @@ router.post('/register', register);
  *                   example: "Internal server error"
  */
 router.post('/login', async (req, res) => {
-    console.log("req body ", req.body);
+    // console.log("req body ", req.body);
 
     try {
         //Check if the username or password is null
@@ -87,7 +87,7 @@ router.post('/login', async (req, res) => {
 
         let queryField;
         if (req.body.username.includes("@")) {
-            console.log("email");
+            // console.log("email");
             queryField = { email: new RegExp(`^${req.body.username.trim()}$`, 'i') };
         } else {
             queryField = { username: req.body.username };
@@ -106,12 +106,12 @@ router.post('/login', async (req, res) => {
         // Authenticate the user
         const isMatch = await bcrypt.compare(req.body.password, user.password);
         if (!isMatch) {
-            console.log(error.toString);
+            // console.log(error.toString);
             return res.status(400).send({ error: 'Invalid login credentials' });
         } else {
-            console.log("User authenticated, creating token: !")
+            // console.log("User authenticated, creating token: !")
             const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY);
-            console.log("Token: ", token);
+            // console.log("Token: ", token);
             res.cookie('token', token, {
                 sameSite: 'Strict',
                 secure: true,
@@ -246,7 +246,7 @@ router.get('/checkLogin', async (req, res) => {
 
             return res.json({ valid: true, user });
         } catch (err) {
-            console.error(err);
+            // console.error(err);
             return res.json({ valid: false });
         }
     });

@@ -19,7 +19,7 @@ const url = oauth2Client.generateAuthUrl({
   scope: SCOPES,
 });
 
-console.log('Authorize this app by visiting this url:', url);
+// console.log('Authorize this app by visiting this url:', url);
 
 rl.question('Enter the code from that page here: ', (code) => {
   rl.close();
@@ -27,6 +27,6 @@ rl.question('Enter the code from that page here: ', (code) => {
     if (err) {
       return console.error('Error retrieving access token', err);
     }
-    console.log('Your refresh token is:', token.refresh_token);
+    // console.log('Your refresh token is:', token.refresh_token);
   });
 });
