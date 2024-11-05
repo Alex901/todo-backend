@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema(
       }],
       default: []
     },
+    language: {
+      type: String,
+      default: 'en',
+      enum: ['en', 'sv '] // English, Swedish
+    },
 
     contacts: { //This is dumb, use references instead
       type: [

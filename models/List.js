@@ -87,7 +87,7 @@ listSchema.pre('deleteOne', { document: true, query: false }, async function (ne
         const Group = require('./Group');
 
         if (list.ownerModel === 'User') {
-            console.log("DEBUG -- User list cleanup");
+            // console.log("DEBUG -- User list cleanup");
             // User list cleanup
             const user = await User.findById(list.owner).populate('myLists');
             if (!user) {
@@ -97,7 +97,7 @@ listSchema.pre('deleteOne', { document: true, query: false }, async function (ne
             // Check if the user's active list is the one being deleted
             if (user.activeList === list.listName) {
                 user.activeList = user.myLists[0].listName || 'all';
-                console.log("DEBUG -- User's active list updated to 'all'");
+                // console.log("DEBUG -- User's active list updated to 'all'");
             }
 
             // Remove the list from user's myLists
@@ -106,7 +106,7 @@ listSchema.pre('deleteOne', { document: true, query: false }, async function (ne
 
             // Find and update todos
             const todos = await Todo.find({ owner: user._id });
-            console.log("DEBUG -- todos found: ", todos);
+            // console.log("DEBUG -- todos found: ", todos);
             for (const todo of todos) {
                 if (todo.inListNew.includes(listId)) {
                     if (todo.inListNew.length === 2) {

@@ -150,6 +150,7 @@ async function checkAndUpdateIsToday() {
        // console.log("Done porcessing tasks for user:", user.username, "tasks:", tasks.length, "\x1b[0m");
         await populateTodayList(todayList, tasks, user.username);
     }
+    console.log('checkAndUpdateIsToday job completed');
 }
 
 async function populateTodayList(todayList, tasks, username) {
