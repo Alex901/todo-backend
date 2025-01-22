@@ -1,6 +1,8 @@
 const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const Feedback = require('../models/Feedback');
+const { calculateReward } = require('../utils/voteUtils');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -374,9 +376,19 @@ router.put('/upvote/:feedbackId', async (req, res) => {
 
         // Check if the user has already voted
         if (!feedback.hasVoted.includes(userId)) {
+            const votingUser = await User.findById(userId);
+            if(votingUser){
+                votingUser.settings.currency += feedback.reward;
+                await votingUser.save();
+            }   
+
             feedback.upvotes += 1;
             feedback.hasVoted.push(userId);
-            await feedback.save();
+
+            const totalVotes = feedback.upvotes + feedback.downvotes;
+            feedback.reward = calculateReward(totalVotes);
+
+            await feedback.save();  
         }
 
         res.status(200).send({ message: 'Successfully upvoted the feedback feature', feedback });
@@ -462,8 +474,18 @@ router.put('/downvote/:feedbackId', async (req, res) => {
         }
 
         if (!feedback.hasVoted.includes(userId)) {
+            const votingUser = await User.findById(userId);
+            if(votingUser){
+                votingUser.settings.currency += feedback.reward;
+                await votingUser.save();
+            }
+
             feedback.downvotes += 1;
             feedback.hasVoted.push(userId);
+
+            const totalVotes = feedback.upvotes + feedback.downvotes;
+            feedback.reward = calculateReward(totalVotes);
+
             await feedback.save();
         }
 

@@ -377,6 +377,27 @@ describe('List Utils', function () {
             created: new Date()
         });
 
+        tasks.normalTaskStartedButNotCompletedNotToday = new Todo({
+            task:"Normal Task started but not completed not today",
+            owner: userA._id,
+            inListNew: [list._id],
+            isToday: false,
+            isStarted: true,
+            isDone: false,
+            created: new Date()
+        });
+
+        tasks.normalTaskStartedButNotCompletedToday = new Todo({
+            task:"Normal Task started but not completed today",
+            owner: userA._id,
+            inListNew: [list._id],
+            isToday: false,
+            dueDate: new Date('2000-01-02'),
+            isStarted: true,
+            isDone: false,
+            created: new Date()
+        });
+
 
         
         for (const task of Object.values(tasks)) {
@@ -737,6 +758,26 @@ describe('List Utils', function () {
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.inListNew).to.not.include(todayList._id);
     });
+
+    it('Check normal task started but not completed not today', async function () {
+        mockdate.set('2022-05-31'); //Irrelevant for this test
+        await checkAndUpdateIsToday();
+    
+        let updatedTask = await Todo.findById(tasks.normalTaskStartedButNotCompletedNotToday._id);
+        expect(updatedTask.isStarted).to.be.false;
+        expect(updatedTask.inListNew).to.not.include(todayList._id);
+    });
+
+    it('Check notmal task started but not completed, today', async function () {
+        mockdate.set('2000-01-02');
+        await checkAndUpdateIsToday();
+
+        let updatedTask = await Todo.findById(tasks.normalTaskStartedButNotCompletedToday._id);
+        expect(updatedTask.isToday).to.be.true;
+        expect(updatedTask.isStarted).to.be.false;
+        expect(updatedTask.inListNew).to.include(todayList._id);
+    });
+
 
     it('Check when there are no tasks for a user', async function () {
         await Todo.deleteMany({ owner: userA._id }); // Ensure there are no tasks for userA

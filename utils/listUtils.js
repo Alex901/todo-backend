@@ -94,6 +94,11 @@ async function checkAndUpdateIsToday() {
                     isToday = false;
                 }
             } else {
+                //To prevent users having tasks running over night, the user should be informad that the task ah been paused.
+                if(task.isStarted && !task.isDone){
+                    task.isStarted = false;
+                    await task.save();
+                }
                 // Non-repeatable tasks
                 if (!task.dueDate) {
                     // console.log('Task has no deadline and is not repeatable:', task.task);
@@ -180,6 +185,11 @@ async function populateTodayList(todayList, tasks, username) {
 
 async function resetDailyTask(task) {
     if (task.repeatable) { //just a precaution
+        if (task.steps && task.steps.length > 0) {
+            task.steps.forEach(step => {
+                step.isDone = false;
+            });
+        }
         if (task.isStarted && !task.isDone) { //Task was started but not completed
             // console.log("DEBUG -- Task was started but not completed");
             task.created = new Date();

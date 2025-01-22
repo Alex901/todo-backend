@@ -19,6 +19,10 @@ const feedbackSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    reward: {
+        type: Number,
+        default: 2
+    },
     type: {
         type: String,
         enum: ['bug', 'performance', 'feature', 'review', 'issues', 'payment', 'other', ''],
