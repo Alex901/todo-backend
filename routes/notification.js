@@ -257,6 +257,8 @@ router.delete('/delete/:id', authenticate, async (req, res) => {
     }
 });
 
+
+//TODO: Docx
 router.post('/request-to-join-group', authenticate, async (req, res) => {
     const { from, to, group } = req.body;
 
