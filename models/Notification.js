@@ -17,12 +17,12 @@ const notificationSchema = new mongoose.Schema({
     response: {
         type: String,
         default: '',
-        enum: ['', 'accepted', 'declined']
+        enum: ['', 'accepted', 'declined', 'read']
     },
     type: {
         type: String,
         required: true,
-        enum: ['friend', 'group', 'request-to-join-group', 'message', 'feedback', 'other']
+        enum: ['friend', 'group', 'request-to-join-group', 'message', 'feedback', 'award', 'other']
     },
     subType: {
         type: String,
@@ -38,7 +38,7 @@ const notificationSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-        expires: 60 * 60 * 24 * 30 // This document will be removed 7 days after it's created
+        expires: 60 * 60 * 24 * 30 // This document will be removed 30 days after it's created
     },
     count: {
         type: Number,

@@ -4,10 +4,58 @@ const { randomlyAwardCurrency } = require('./currencyUtils');
 
 async function calculateAndAwardScore(task) {
     let score = 0;
+    let currencyChance = 0;
 
     // Simple scoring logic: 1 point per second spent
     if (task.isDone) {
-        score = 1;
+        if (task.repeatable) {
+            // Repeatable task scoring logic
+            const baseScore = 1;
+            const streakMultiplier = Math.pow(1.1, task.repeatStreak);
+            const repeatBonus = 0.1 * task.repeatCount;
+            score = baseScore * streakMultiplier + repeatBonus;
+
+            // Currency chance logic for repeatable tasks
+            currencyChance = Math.min(0.01 * task.repeatStreak, 0.2);
+        } else {
+            // Non-repeatable task scoring logic
+            score = 1;
+
+            // Additional points for completing within the deadline
+            if (task.dueDate) {
+                score += 1;
+                if (new Date(task.dueDate) >= new Date(task.completed)) {
+                    console.log('Task completed within deadline');
+                    score += 4;
+                }
+            }
+
+                // Additional points for estimated time
+                if (task.estimatedTime) {
+                    score += 1; // Extra point for having an estimated time
+                    const estimatedTimeInMs = task.estimatedTime * 60 * 60 * 1000; // Convert hours to milliseconds
+                    if (task.totalTimeSpent <= estimatedTimeInMs) {
+                        score += 3; // Additional points for completing within the estimated time
+                    }
+                }
+
+            // Score increases with time spent on the task
+            const hoursSpent = task.totalTimeSpent / (1000 * 60 * 60);
+            score *= 1 + (0.05 * hoursSpent);
+            console.log("DEBUG: calculateAndAwardScore: score1: ", score);
+
+            // Additional points for each completed step
+            const completedSteps = task.steps.filter(step => step.isDone).length;
+            score += completedSteps;
+
+            // Ensure the score does not exceed 10 points
+            score = Math.min(score, 20);
+
+            console.log("DEBUG: calculateAndAwardScore: score: ", score);
+
+            // Currency chance logic for non-repeatable tasks
+            currencyChance = score / 100;
+        }
     }
 
     // Check if the task is owned by a user or a group
@@ -18,15 +66,13 @@ async function calculateAndAwardScore(task) {
         await user.save();
 
         // Award currency with a 10% chance for normal tasks and 5% for repeatable tasks
-        const currencyChance = task.repeatable ? 0.05 : 0.1;
         await randomlyAwardCurrency(user._id, currencyChance);
     } else {
         // Task is owned by a group
         const group = await Group.findOne({ _id: task.owner });
         if (group) {
-            console.log("Group found, group members: ", group.members);
+            currencyChance += 0.03; // Increase currency chance for group tasks
             const members = group.members.map(member => member.member_id);
-            const currencyChance = task.repeatable ? 0.05 : 0.1;
             let currencyAwarded = false;
 
             for (const memberId of members) {
