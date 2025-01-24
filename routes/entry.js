@@ -6,6 +6,7 @@ const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
 const cors = require('cors');
 const listUtils = require('../utils/listUtils');
+const scoreUtils = require('../utils/scoreUtils');
 
 const router = express.Router();
 
@@ -362,14 +363,20 @@ router.get('/todos/mobile', async (req, res) => {
 router.patch('/done', async (req, res) => {
   // console.log(req.body);
   try {
-    const { taskId } = req.body;
+    const { taskId, userId } = req.body;
 
     // Fetch the document first
     const todo = await Todo.findById(taskId);
+    const user = await User.findById(userId);
 
     if (!todo) {
       return res.status(404).json({ message: 'Task not found' });
     }
+    if(!user){
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+
 
     // Calculate the time difference
     const currentTime = new Date().getTime();
@@ -381,8 +388,11 @@ router.patch('/done', async (req, res) => {
       isDone: true,
       completed: new Date(),
       $inc: { __v: 1 },
-      totalTimeSpent: totalTimeSpent
+      totalTimeSpent: totalTimeSpent,
+      completedBy: user._id,
     }, { new: true });
+
+
 
     res.status(200).json({ message: 'Task marked as done successfully', updatedTodo });
   } catch (error) {
@@ -826,7 +836,7 @@ router.patch('/update', async (req, res) => {
  *                   example: "Internal server error"
  */
 router.patch('/stepComplete', async (req, res) => {
-  const { taskId, stepId } = req.body;
+  const { taskId, stepId, userId } = req.body;
 
   try {
     // Find the task by id
@@ -840,7 +850,10 @@ router.patch('/stepComplete', async (req, res) => {
       return res.status(404).json({ message: 'Step not found' });
     }
 
+    
     step.isDone = true;
+    step.completedBy = userId;
+    step.completed = new Date();
 
     // Save the updated task
     await task.save();
@@ -926,6 +939,8 @@ router.patch('/stepUncomplete', async (req, res) => {
     }
 
     step.isDone = false;
+    step.completedBy = null;
+    step.completed = null;
 
     // Save the updated task
     await task.save();

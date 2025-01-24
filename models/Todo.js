@@ -4,7 +4,12 @@ const Schema = mongoose.Schema;
 const stepSchema = new mongoose.Schema({
     id: Number,
     taskName: String,
-    isDone: Boolean
+    isDone: Boolean,
+    completed: Date,
+    completedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }
 });
 
 const todoSchema = new mongoose.Schema({
@@ -123,6 +128,10 @@ const todoSchema = new mongoose.Schema({
     repeatStreak: {
         type: Number,
     },
+    completedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
     repeatableCompleted: [{
         startTime: {
             type: Date,
@@ -145,7 +154,8 @@ const todoSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-}, {
+}, 
+{
     collection: 'Entries',
     timestamps: true
 }
