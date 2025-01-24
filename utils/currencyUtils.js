@@ -6,7 +6,7 @@ async function randomlyAwardCurrency(userId, chance) {
         const random = Math.random();
         if (random < chance) {
             const currencyAwarded = 1;
-            user.currency += currencyAwarded;
+            user.settings.currency += currencyAwarded;
             await user.save();
             return currencyAwarded;
         }

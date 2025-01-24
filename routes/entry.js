@@ -6,7 +6,7 @@ const { authenticate } = require('../middlewares/auth');
 const User = require('../models/User');
 const cors = require('cors');
 const listUtils = require('../utils/listUtils');
-const scoreUtils = require('../utils/scoreUtils');
+const { calculateAndAwardScore } = require('../utils/scoreUtils');
 
 const router = express.Router();
 
@@ -377,7 +377,6 @@ router.patch('/done', async (req, res) => {
     }
 
 
-
     // Calculate the time difference
     const currentTime = new Date().getTime();
     const timeSpent = currentTime - new Date(todo.started).getTime();
@@ -392,9 +391,9 @@ router.patch('/done', async (req, res) => {
       completedBy: user._id,
     }, { new: true });
 
+    const score = await calculateAndAwardScore(updatedTodo);
 
-
-    res.status(200).json({ message: 'Task marked as done successfully', updatedTodo });
+    res.status(200).json({ message: 'Task marked as done successfully and score awarded', updatedTodo, score });
   } catch (error) {
     console.error('Error setting task to done:', error);
     res.status(500).json({ message: 'Internal server error' });
