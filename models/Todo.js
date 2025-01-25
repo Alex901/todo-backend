@@ -124,9 +124,11 @@ const todoSchema = new mongoose.Schema({
     },
     repeatCount: {
         type: Number,
+        default: 0
     },
     repeatStreak: {
         type: Number,
+        default: 0
     },
     completedBy: {
         type: mongoose.Schema.Types.ObjectId,

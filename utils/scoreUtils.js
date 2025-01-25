@@ -11,12 +11,14 @@ async function calculateAndAwardScore(task) {
         if (task.repeatable) {
             // Repeatable task scoring logic
             const baseScore = 1;
-            const streakMultiplier = Math.pow(1.1, task.repeatStreak);
-            const repeatBonus = 0.1 * task.repeatCount;
+            //This is exponential, might have to rebalance this at some point. 
+            const streakMultiplier = Math.pow(1.05, task.repeatStreak || 0);
+            const repeatBonus = 0.1 * (task.repeatCount || 0);
             score = baseScore * streakMultiplier + repeatBonus;
 
             // Currency chance logic for repeatable tasks
             currencyChance = Math.min(0.01 * task.repeatStreak, 0.2);
+            console.log("DEBUG: calculateAndAwardScore score repeatable: ", score);
         } else {
             // Non-repeatable task scoring logic
             score = 1;

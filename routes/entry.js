@@ -372,7 +372,7 @@ router.patch('/done', async (req, res) => {
     if (!todo) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    if(!user){
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
@@ -386,7 +386,7 @@ router.patch('/done', async (req, res) => {
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
       isDone: true,
       completed: new Date(),
-      $inc: { __v: 1 },
+      $inc: { __v: 1, repeatCount: 1 },
       totalTimeSpent: totalTimeSpent,
       completedBy: user._id,
     }, { new: true });
@@ -849,7 +849,7 @@ router.patch('/stepComplete', async (req, res) => {
       return res.status(404).json({ message: 'Step not found' });
     }
 
-    
+
     step.isDone = true;
     step.completedBy = userId;
     step.completed = new Date();
@@ -936,10 +936,11 @@ router.patch('/stepUncomplete', async (req, res) => {
     if (!step) {
       return res.status(404).json({ message: 'Step not found' });
     }
-
-    step.isDone = false;
-    step.completedBy = null;
-    step.completed = null;
+    if (!task.isDone) {
+      step.isDone = false;
+      step.completedBy = null;
+      step.completed = null;
+    }
 
     // Save the updated task
     await task.save();
