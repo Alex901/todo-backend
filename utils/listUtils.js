@@ -159,7 +159,7 @@ async function checkAndUpdateIsToday() {
 }
 
 async function populateTodayList(todayList, tasks, username) {
-    // console.log('Populating today list for user', username);
+
 
     // for (const task of tasks) {
     //     if (task.task === "Monthly Task End 3") {
@@ -169,15 +169,16 @@ async function populateTodayList(todayList, tasks, username) {
 
     for (const task of tasks) {
         // Remove everything from today list
+       // console.log(`\x1b[31mResetting task: ${task.task}\x1b[0m`);
         task.inListNew = task.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
 
         if (task.isToday) {
             // console.log("\x1b[34mAdding task to today list:", task.task, "\x1b[0m");
             if (!task.inListNew.includes(todayList._id)) {
+               // console.log(`\x1b[32mAdding task to today list \x1b[0m`);
                 task.inListNew.push(todayList._id);
             }
         }
-
         // Save the task only if it was modified
         await task.save();
     }

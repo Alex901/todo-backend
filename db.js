@@ -1,13 +1,16 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const connectDB = async () => {
+const connectDB = async (initializeGlobalSettings) => {
     try {
         let dbName;
+
+        
 
         switch (process.env.NODE_ENV) {
             case 'development':
                 dbName = 'todoDatabase';
+                
                 break;
             case 'production':
                 dbName = 'habitForge';
@@ -20,7 +23,7 @@ const connectDB = async () => {
         }
 
         await mongoose.connect(process.env.DATABASE_URI, { dbName });
-
+        await initializeGlobalSettings();
         console.log('Successfully connected to MongoDB');
     } catch (error) {
         console.log('Error connecting to MongoDB:', error);

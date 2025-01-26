@@ -9,6 +9,7 @@ const entriesRoutes = require('./routes/entry');
 const groupRoutes = require('./routes/group');
 const notificationRoutes = require('./routes/notification');
 const feedbackRoutes = require('./routes/feedback');
+const settingsRountes = require('./routes/settings');
 const User = require('./models/User');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -17,6 +18,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const swaggerSetup = require('./swagger');
 const scheduler = require('./utils/scheduler');
+const { initializeGlobalSettings } = require('./models/GlobalSettings');
 
 
 
@@ -50,7 +52,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Connect to MongoDB
-connectDB();
+connectDB(initializeGlobalSettings);
 
 app.use(cookieParser());
 app.use(morgan('dev'));
@@ -82,6 +84,7 @@ app.use('/users', userRoutes);
 app.use('/groups', groupRoutes)
 app.use('/notifications', notificationRoutes);
 app.use('/feedback', feedbackRoutes);
+app.use('/settings', settingsRountes);
 
 app.use((req, res, next) => {
     // console.log(`${req.method} ${req.url}`, req.body);
