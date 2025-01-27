@@ -137,6 +137,7 @@ router.get('/emoji/top/:x', authenticate, async (req, res) => {
             return res.status(404).json({ message: 'Global settings not found' });
         }
 
+        // Sort emojis by count in descending order and slice the top x
         const topEmojis = globalSettings.emojiSettings.emojis
             .sort((a, b) => b.count - a.count)
             .slice(0, parseInt(x))

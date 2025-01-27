@@ -705,21 +705,22 @@ router.patch('/cancel', async (req, res) => {
  *                   type: string
  *                   example: "Internal server error"
  */
-router.patch('/edit', async (req, res) => {
+router.patch('/edit', authenticate, async (req, res) => {
   try {
     const { taskId, updatedTask } = req.body;
 
-    const updatedTodo = await Todo.findOneAndUpdate(
-      { _id: taskId },
-      updatedTask,
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedTodo) {
+    let todo = await Todo.findById(taskId);
+    if (!todo) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    res.status(200).json({ message: 'Task updated successfully', updatedTodo });
+    // Update the task fields
+    Object.assign(todo, updatedTask);
+
+    // Save the updated task to trigger pre-save hooks
+    await todo.save();
+
+    res.status(200).json({ message: 'Task updated successfully', updatedTodo: todo });
   } catch (error) {
     console.error('Error updating task:', error);
     res.status(500).json({ message: 'Internal server error' });

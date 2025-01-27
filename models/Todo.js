@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const { GlobalSettings, initializeGlobalSettings } = require('./GlobalSettings');
 
 const stepSchema = new mongoose.Schema({
     id: Number,
@@ -163,7 +164,7 @@ const todoSchema = new mongoose.Schema({
 }
 );
 
-todoSchema.pre('save', function (next) {
+todoSchema.pre('save', async function (next) {
     if (!this.repeatable) {
         this.repeatIntervall = undefined;
         this.repeatDays = undefined;
@@ -175,6 +176,22 @@ todoSchema.pre('save', function (next) {
         this.repeatCount = undefined;
         this.repeatableCompletedDate = undefined;
         this.repeatableEmoji = undefined;
+    } else {
+        if (this.repeatableEmoji) {
+            let globalSettings = await GlobalSettings.findOne({});
+            if (!globalSettings) {
+                initializeGlobalSettings();
+            }
+
+            const existingEmoji = globalSettings.emojiSettings.emojis.find(e => e.emoji === this.repeatableEmoji);
+            if (existingEmoji) {
+                existingEmoji.count += 1;
+            } else {
+                globalSettings.emojiSettings.emojis.push({ emoji: this.repeatableEmoji, count: 1 });
+            }
+
+            await globalSettings.save();
+        }
     }
     next();
 });
