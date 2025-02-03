@@ -131,6 +131,10 @@ const todoSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    repeatableLongestStreak: {
+        type: Number,
+        default: 0
+    },
     completedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -177,6 +181,11 @@ todoSchema.pre('save', async function (next) {
         this.repeatableCompletedDate = undefined;
         this.repeatableEmoji = undefined;
     } else {
+        //Updates longest streak
+        if(this.repeatStreak > this.repeatableLongestStreak) {
+            this.repeatableLongestStreak = this.repeatStreak;
+        }
+
         if (this.repeatableEmoji) {
             let globalSettings = await GlobalSettings.findOne({});
             if (!globalSettings) {
