@@ -193,7 +193,9 @@ router.get('/todos', authenticate, async (req, res) => {
           { owner: req.user._id },
           { owner: { $in: req.user.groups } }
         ]
-      }).populate('inListNew'); //REMEMBER: observer and shared too
+      }).populate('inListNew')
+      .populate("tasksBefore")
+      .populate("tasksAfter"); //REMEMBER: observer and shared too
     }
     res.json(entries);
   } catch (error) {

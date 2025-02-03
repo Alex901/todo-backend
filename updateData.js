@@ -140,7 +140,7 @@ async function updateEstTimes(users) {
 
             // Multiply the estimated time by 60
             if (todo.estimatedTime > 0) {
-               // console.log(`Updating estimated time for todo ${todo._id}`);
+                // console.log(`Updating estimated time for todo ${todo._id}`);
                 todo.estimatedTime *= 60;
             }
             // Save the updated todo
@@ -149,25 +149,56 @@ async function updateEstTimes(users) {
     }
 }
 
+async function updateTodos2(users) {
+    for (const user of users) {
+        const query = {
+            $or: [
+                { owner: user._id },
+                { owner: { $in: user.groups || [] } }
+            ]
+        };
+
+        const todos = await Todo.find(query);
+
+        for (const todo of todos) {
+            if (!todo.tasksBefore) {
+                todo.tasksBefore = [];
+            }
+            if (!todo.tasksAfter) {
+                todo.tasksAfter = [];
+            }
+            if (todo.repeatableLongestStreak === undefined) {
+                todo.repeatableLongestStreak = 0;
+            }
+
+            await todo.save();
+        }
+    }
+    console.log('Todos updated successfully');
+}
 
 async function main() {
     try {
         await mongoose.connect(process.env.DATABASE_URI, { dbName: 'todoDatabase' });
         console.log('Connected to the database');
 
-        // Adjust the query as needed to fetch the desired users
-        const users = await User.find({ username: 'Alzner' }); // Empty filter to find all users
+        // Fetch all users
+        const users = await User.find({}); // or simply User.find()
 
         // Call update functions
         // await updateUsers(users);
-        // await updateTodos(users, List);
+        await updateTodos2(users); // Call the new updateTodos2 function
         // await updateGroups(users); // Uncomment when updateGroups is implemented
-        await updateEstTimes(users);
+        // await updateEstTimes(users);
 
-        // console.log('Update process completed.');
+        console.log('Update process completed.');
     } catch (err) {
         console.error('Update process failed:', err);
+    } finally {
+        mongoose.connection.close();
     }
 }
 
-main().catch(err => console.error(err));
+main().catch(err => {
+    console.error('Error in main function:', err);
+});

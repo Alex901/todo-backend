@@ -95,6 +95,14 @@ const todoSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    tasksAfter: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Todo'
+    }],
+    tasksBefore: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Todo'
+    }],
     repeatable: {
         type: Boolean,
     },
