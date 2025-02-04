@@ -77,12 +77,12 @@ feedbackSchema.pre('save', async function (next) {
     const Notification = require('./Notification');
     if (this.isNew) {
         try {
-            console.log('DEBUG -- type: ', this.type, ' subType: ', this.subType)
-            const admins = await User.find({ role: 'admin' });
+            // console.log('DEBUG -- type: ', this.type, ' subType: ', this.subType)
+            // const admins = await User.find({ role: 'admin' });
 
             for (const admin of admins) {
                 const existingNotification = await Notification.findOne({ to: admin._id, subType: this.type });
-                console.log('DEBUG -- Existing notification: ', existingNotification);
+                // console.log('DEBUG -- Existing notification: ', existingNotification);
 
                 if (existingNotification) {
                     existingNotification.count += 1;
@@ -121,19 +121,19 @@ feedbackSchema.post('save', async function (doc, next) {
     const Notification = require('./Notification');
 
     if (doc.resolved) {
-        console.log('DEBUG -- Feedback resolved: ', doc.resolved);
+        // console.log('DEBUG -- Feedback resolved: ', doc.resolved);
         try {
             const admins = await User.find({ role: 'admin' });
-            console.log('DEBUG -- doc type: ', doc.type);
+            // console.log('DEBUG -- doc type: ', doc.type);
 
             for (const admin of admins) {
                 const existingNotification = await Notification.findOne({ to: admin._id, subType: doc.type });
-                console.log('DEBUG -- Existing notification: ', existingNotification);
+                // console.log('DEBUG -- Existing notification: ', existingNotification);
                 if (existingNotification) {
                     try {
                         // Query the database to get the count of feedback entries with the specified type and resolved !== null
                         const feedbackCount = await Feedback.countDocuments({ type: doc.type, resolved: null });
-                        console.log('DEBUG -- feedbackCount: ', feedbackCount);
+                        // console.log('DEBUG -- feedbackCount: ', feedbackCount);
 
                         if (feedbackCount > 0) {
                             existingNotification.count = feedbackCount;

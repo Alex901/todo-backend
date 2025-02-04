@@ -24,7 +24,7 @@ const globalSettingsSchema = new mongoose.Schema({
 async function initializeGlobalSettings() {
     const existingSettings = await GlobalSettings.findOne({});
     if (!existingSettings) {
-        console.log('DEBUG -- No global settings found, creating default settings');
+        // console.log('DEBUG -- No global settings found, creating default settings');
         const defaultSettings = new GlobalSettings({
             emojiSettings: {
                 emojis: [

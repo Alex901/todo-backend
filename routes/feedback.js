@@ -146,7 +146,7 @@ router.post('/post-feedback', async (req, res) => {
         console.log("DEBUG -- req.body in create feedback: ", req.body)
         const feedback = new Feedback(req.body);
       
-        console.log('DEBUG -- type in route: ', feedback.type, ' subType: ', req.body.subType);
+        // console.log('DEBUG -- type in route: ', feedback.type, ' subType: ', req.body.subType);
 
         await feedback.save();
         res.status(201).send(feedback);

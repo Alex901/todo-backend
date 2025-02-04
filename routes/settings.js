@@ -130,10 +130,10 @@ router.delete('/emoji/remove', authenticate, async (req, res) => {
 router.get('/emoji/top/:x', authenticate, async (req, res) => {
     const { x } = req.params;
     try {
-        console.log('DEBUG: Fetching top emojis');
+        // console.log('DEBUG: Fetching top emojis');
         const globalSettings = await GlobalSettings.findOne({});
         if (!globalSettings) {
-            console.log('DEBUG: Global settings not found');
+            // console.log('DEBUG: Global settings not found');
             return res.status(404).json({ message: 'Global settings not found' });
         }
 
@@ -143,7 +143,7 @@ router.get('/emoji/top/:x', authenticate, async (req, res) => {
             .slice(0, parseInt(x))
             .map(e => e.emoji);
 
-        console.log('DEBUG: Top emojis fetched successfully');
+        // console.log('DEBUG: Top emojis fetched successfully');
         res.status(200).json(topEmojis);
     } catch (error) {
         console.error('Error fetching top emojis:', error);

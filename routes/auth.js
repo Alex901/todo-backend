@@ -237,7 +237,7 @@ router.get('/checkLogin', async (req, res) => {
                     path: 'groups',
                     populate: {
                         path: 'members.member_id',
-                        model: 'User' // Replace 'User' with the actual model name if different
+                        model: 'User' 
                     }
                 });
             if (!user) {
