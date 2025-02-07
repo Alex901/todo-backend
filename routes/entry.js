@@ -7,7 +7,7 @@ const User = require('../models/User');
 const cors = require('cors');
 const listUtils = require('../utils/listUtils');
 const { calculateAndAwardScore } = require('../utils/scoreUtils');
-
+const { linkTasks, unlinkTasks, updateTaskLinks } = require('../services/entryService');
 const router = express.Router();
 
 
@@ -88,9 +88,9 @@ const router = express.Router();
  *                   example: "Internal server error"
  */
 router.post('/', async (req, res) => {
-  //console.log("req.body: ", req.body);
+  // console.log("req.body: ", req.body);
   try {
-    if (req.body.tags.length > 0) {
+    if (req.body.tags && req.body.tags.length > 0) {
       const tagNames = [];
       for (tag of req.body.tags) {
         tagNames.push(tag.label);
@@ -112,6 +112,9 @@ router.post('/', async (req, res) => {
 
     const todo = new Todo(req.body);
     await todo.save();
+
+    await linkTasks(todo._id, req.body.tasksBefore || [], req.body.tasksAfter || []);
+
     res.status(201).json({ message: 'Todo entry created successfully', todo });
 
 
@@ -194,8 +197,8 @@ router.get('/todos', authenticate, async (req, res) => {
           { owner: { $in: req.user.groups } }
         ]
       }).populate('inListNew')
-      .populate("tasksBefore")
-      .populate("tasksAfter"); //REMEMBER: observer and shared too
+        .populate("tasksBefore")
+        .populate("tasksAfter"); //REMEMBER: observer and shared too
     }
     res.json(entries);
   } catch (error) {
@@ -263,10 +266,10 @@ router.get('/todos', authenticate, async (req, res) => {
  *                   example: "Internal server error"
  */
 router.get('/todos/mobile', async (req, res) => {
-  console.log("mobile request works, hurray!!!");
+  // console.log("mobile request works, hurray!!!");
   try {
     let entries = [];
-    console.log("req.headers: ", req.headers.user);
+    // console.log("req.headers: ", req.headers.user);
 
     const user = await User.findOne({ _id: req.headers.user });
 
@@ -477,6 +480,7 @@ router.delete('/delete/:taskId', async (req, res) => {
         }
       }
     }
+    await unlinkTasks(taskId);
     await Todo.findByIdAndDelete(taskId);
     return res.status(200).json({ message: 'Successfully deleted entry!' });
   } catch (error) {
@@ -719,8 +723,19 @@ router.patch('/edit', authenticate, async (req, res) => {
     // Update the task fields
     Object.assign(todo, updatedTask);
 
-    // Save the updated task to trigger pre-save hooks
+    if (todo.tasksBefore && todo.tasksBefore.length > 0 || todo.tasksAfter && todo.tasksAfter.length > 0) {
+      if (todo.repeatable) {
+        // console.log("Task is repeatable", todo);
+        await unlinkTasks(taskId);
+        await todo.save();
+      } else {
+        await updateTaskLinks(taskId, updatedTask);
+      }
+    }
+
     await todo.save();
+
+
 
     res.status(200).json({ message: 'Task updated successfully', updatedTodo: todo });
   } catch (error) {
