@@ -720,18 +720,22 @@ router.patch('/edit', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Update the task fields
-    Object.assign(todo, updatedTask);
-
-    if (todo.tasksBefore && todo.tasksBefore.length > 0 || todo.tasksAfter && todo.tasksAfter.length > 0) {
-      if (todo.repeatable) {
-        // console.log("Task is repeatable", todo);
+    // Check if there are tasks to link/unlink in the updatedTask
+    if ((updatedTask.tasksBefore && updatedTask.tasksBefore.length > 0) || (updatedTask.tasksAfter && updatedTask.tasksAfter.length > 0) || (todo.tasksBefore && todo.tasksBefore.length > 0) || (todo.tasksAfter && todo.tasksAfter.length > 0)) {
+      console.log("There are tasks to link/unlink");
+      if (updatedTask.repeatable) {
+        console.log("Task is repeatable");
+        updatedTask.tasksBefore = [];
+        updatedTask.tasksAfter = [];
         await unlinkTasks(taskId);
-        await todo.save();
       } else {
+        console.log("Task is normal, let's unlink tasks and link the new ones");
         await updateTaskLinks(taskId, updatedTask);
       }
     }
+
+    // Update the task fields
+    Object.assign(todo, updatedTask);
 
     await todo.save();
 
