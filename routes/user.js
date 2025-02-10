@@ -1503,10 +1503,24 @@ router.patch('/update-todo-settings/:id', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update the specified setting
-    if (user.settings.todoList.hasOwnProperty(settingName)) {
-      user.settings.todoList[settingName] = value;
-    } else {
+    let settingFound = false;
+
+    // Iterate through all settings and their categories
+    for (const category in user.settings) {
+      if (typeof user.settings[category] === 'object' && user.settings[category] !== null) {
+        if (user.settings[category].hasOwnProperty(settingName)) {
+          user.settings[category][settingName] = value;
+          settingFound = true;
+          break;
+        }
+      } else if (category === settingName) {
+        user.settings[category] = value;
+        settingFound = true;
+        break;
+      }
+    }
+
+    if (!settingFound) {
       return res.status(400).json({ message: 'Invalid setting name' });
     }
 

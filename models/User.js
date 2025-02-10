@@ -180,7 +180,12 @@ const userSchema = new mongoose.Schema(
         type: Number,
         default: 0,
         required: true,
-      }
+      },
+      activeView: {
+        type: String,
+        default: 'list', // Change to dashboard when dashboard is implemented
+        enum: ['list','dashboard','social'],
+      },
     },
     activationToken: {
       type: String,
