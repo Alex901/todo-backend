@@ -8,6 +8,7 @@ const cors = require('cors');
 const listUtils = require('../utils/listUtils');
 const { calculateAndAwardScore } = require('../utils/scoreUtils');
 const { linkTasks, unlinkTasks, updateTaskLinks } = require('../services/entryService');
+const { shouldBeRepeatedToday, addToTodayList } = require('../utils/entryUtils');
 const router = express.Router();
 
 
@@ -720,64 +721,75 @@ router.patch('/edit', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-       // Define today's date range
-       const todayStart = new Date();
-       todayStart.setHours(0, 0, 0, 0);
-       const todayEnd = new Date();
-       todayEnd.setHours(23, 59, 59, 999);
-   
-       // Find the user's "today" list
-       const user = await User.findById(todo.owner).populate('myLists');
-      //  console.log("user lists: ", user.myLists)
-       let todayList;
-       if (user) {
-         todayList = user.myLists.find(list => list.listName === 'today');
-       }
+    // Define today's date range
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
 
-      //  console.log("todayList: ", todayList);
-   
-       // Check if the task is currently in the "today" list
-       const isCurrentlyToday = todo.dueDate && new Date(todo.dueDate) >= todayStart && new Date(todo.dueDate) <= todayEnd;
-   
-       // Check if the updated task should be in the "today" list
-       const isUpdatedToday = updatedTask.dueDate && new Date(updatedTask.dueDate) >= todayStart && new Date(updatedTask.dueDate) <= todayEnd;
-   
-       // Handle the cases
-       if (isCurrentlyToday && !isUpdatedToday) {
-         // Case 1: The task is today but is updated to not be today
-         // Case 2: The task is today but is updated to not have a dueDate
-         console.log("Task was today but is updated to not be today or have no dueDate");
-         updatedTask.isToday = false;
-         if (todayList && updatedTask.inListNew) {
-           updatedTask.inListNew = updatedTask.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
-         }
-       } else if (!isCurrentlyToday && isUpdatedToday) {
-         // Case 3: The task is not today but is updated to have dueDate today
-         // Case 5: The task does not have a due date, but is updated to have a dueDate today
-         console.log("Task is updated to be due today");
-         updatedTask.isToday = true;
-         if (todayList) {
-           if (!updatedTask.inListNew) {
-             updatedTask.inListNew = [];
-           }
-           if (!updatedTask.inListNew.includes(todayList._id)) {
-             updatedTask.inListNew.push(todayList._id);
-           }
-         }
-       } else if (!updatedTask.dueDate) {
-         // Case 4: The task is not today and updated to have no dueDate
-         // Case 6: The task does not have a due date, but is updated to have a dueDate that is not today
-         console.log("Task is updated to have no dueDate or a dueDate that is not today");
-         updatedTask.isToday = false;
-         if (todayList && updatedTask.inListNew) {
-           updatedTask.inListNew = updatedTask.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
-         }
-       }
+    // Find the user's "today" list
+    const user = await User.findById(todo.owner).populate('myLists');
+    //  console.log("user lists: ", user.myLists)
+    let todayList;
+    if (user) {
+      todayList = user.myLists.find(list => list.listName === 'today');
+    }
+
+    //  console.log("todayList: ", todayList);
+
+    // Check if the task is currently in the "today" list
+    const isCurrentlyToday = todo.dueDate && new Date(todo.dueDate) >= todayStart && new Date(todo.dueDate) <= todayEnd;
+
+    // Check if the updated task should be in the "today" list
+    const isUpdatedToday = updatedTask.dueDate && new Date(updatedTask.dueDate) >= todayStart && new Date(updatedTask.dueDate) <= todayEnd;
+
+    // Handle the cases
+    if (isCurrentlyToday && !isUpdatedToday) {
+      // Case 1: The task is today but is updated to not be today
+      // Case 2: The task is today but is updated to not have a dueDate
+      console.log("Task was today but is updated to not be today or have no dueDate");
+      updatedTask.isToday = false;
+      if (todayList && updatedTask.inListNew) {
+        updatedTask.inListNew = updatedTask.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
+      }
+    } else if (!isCurrentlyToday && isUpdatedToday) {
+      // Case 3: The task is not today but is updated to have dueDate today
+      // Case 5: The task does not have a due date, but is updated to have a dueDate today
+      console.log("Task is updated to be due today");
+      updatedTask.isToday = true;
+      if (todayList) {
+        if (!updatedTask.inListNew) {
+          updatedTask.inListNew = [];
+        }
+        if (!updatedTask.inListNew.includes(todayList._id)) {
+          updatedTask.inListNew.push(todayList._id);
+        }
+      }
+    } else if (!updatedTask.dueDate) {
+      // Case 4: The task is not today and updated to have no dueDate
+      // Case 6: The task does not have a due date, but is updated to have a dueDate that is not today
+      console.log("Task is updated to have no dueDate or a dueDate that is not today");
+      updatedTask.isToday = false;
+      if (todayList && updatedTask.inListNew) {
+        updatedTask.inListNew = updatedTask.inListNew.filter(listId => listId.toString() !== todayList._id.toString());
+      }
+    }
+
+    if (updatedTask.repeatable) {
+      if (shouldBeRepeatedToday(updatedTask)) {
+        // console.log("Task should be repeated today");
+        updatedTask.isToday = true;
+        const tempTask = await addToTodayList(updatedTask);
+        console.log("DEBUG -- tempTask: ", tempTask);
+        updatedTask.inListNew = tempTask.inListNew;
+        // console.log("DEBUG -- updated task lists: ", updatedTask.inListNew);
+      }
+    }
 
     // Check if there are tasks to link/unlink in the updatedTask
     if ((updatedTask.tasksBefore && updatedTask.tasksBefore.length > 0) || (updatedTask.tasksAfter && updatedTask.tasksAfter.length > 0) || (todo.tasksBefore && todo.tasksBefore.length > 0) || (todo.tasksAfter && todo.tasksAfter.length > 0)) {
       console.log("There are tasks to link/unlink");
-      if(updatedTask.dueDate.isToday()){
+      if (updatedTask.dueDate.isToday()) {
         console.log("Task is due today");
         updatedTask.isToday = true;
       }
