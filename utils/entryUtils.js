@@ -33,15 +33,16 @@ const shouldBeRepeatedToday = (task) => {
 };
 
 const addToTodayList = async (task) => {
+    console.log('Task:', task);
     let todayList;
 
-    // console.log('Task owner:', task.inListNew[0].owner);
+    console.log('Task owner:', task.owner);
   
     // Check if the owner is a User or a Group
-    const user = await User.findById(task.inListNew[0].owner).populate('myLists');
+    const user = await User.findById(task.owner).populate('myLists');
     const group = await Group.findById(task.owner);
 
-    // console.log('User:', user);
+    console.log('User:', user);
   
     if (user) {
       todayList = user.myLists.find(list => list.listName === 'today');

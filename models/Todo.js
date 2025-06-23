@@ -160,6 +160,7 @@ const todoSchema = new mongoose.Schema({
             type: Number, // Duration in minutes
             required: true
         },
+        steps: [stepSchema]
 
     }],
     repeatableEmoji: {
@@ -169,11 +170,11 @@ const todoSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-}, 
-{
-    collection: 'Entries',
-    timestamps: true
-}
+},
+    {
+        collection: 'Entries',
+        timestamps: true
+    }
 );
 
 todoSchema.pre('save', async function (next) {
@@ -190,7 +191,7 @@ todoSchema.pre('save', async function (next) {
         this.repeatableEmoji = undefined;
     } else {
         //Updates longest streak
-        if(this.repeatStreak > this.repeatableLongestStreak) {
+        if (this.repeatStreak > this.repeatableLongestStreak) {
             this.repeatableLongestStreak = this.repeatStreak;
         }
 

@@ -111,6 +111,16 @@ router.post('/', async (req, res) => {
       }
     }
 
+
+    if (req.body.repeatable) {
+      if (shouldBeRepeatedToday(req.body)) {
+        req.body.isToday = true;
+        const tempTask = await addToTodayList(req.body);
+        console.log("DEBUG -- tempTask: ", tempTask);
+        req.body.inListNew = tempTask.inListNew;
+      }
+    }
+
     const todo = new Todo(req.body);
     await todo.save();
 

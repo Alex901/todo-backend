@@ -33,3 +33,4 @@ generate-token.js
 # Ignore testing files
 updateUser.js
 printIsToday.js
+.qodo
