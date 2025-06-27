@@ -8,6 +8,7 @@ const multer = require('multer');
 const { Storage } = require('@google-cloud/storage');
 const jwt = require('jsonwebtoken');
 const sendMail = require('../utils/mailer');
+const { ensureLatestRequest, validateLatestRequest } = require('../middlewares/latestRequestMiddleware');
 
 require('dotenv').config({ path: './config/.env' });
 
@@ -1492,7 +1493,7 @@ router.patch('/toggledetails/:id', async (req, res) => {
  *               type: string
  *               example: "Internal server error"
  */
-router.patch('/update-todo-settings/:id', async (req, res) => {
+router.patch('/update-todo-settings/:id', ensureLatestRequest, validateLatestRequest, async (req, res) => {
   try {
     const userId = req.params.id;
     const { settingName, value } = req.body;
