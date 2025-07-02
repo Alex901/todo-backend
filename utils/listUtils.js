@@ -189,10 +189,22 @@ async function resetDailyTask(task) {
         if (task.steps && task.steps.length > 0) {
             task.steps.forEach(step => {
                 step.isDone = false;
+                step.completed = null;
             });
         }
         if (task.isStarted && !task.isDone) { //Task was started but not completed
             // console.log("DEBUG -- Task was started but not completed");
+              // Task was started but not completed
+            task.repeatableCompleted.push({
+                startTime: task.started,
+                duration: task.totalTimeSpent,
+                steps: task.steps?.map(step => ({
+                    taskName: step.taskName,
+                    isDone: step.isDone,
+                    completed: step.completed || null // Include completed date if available
+                })) || [] // Handle cases where steps are undefined
+            });
+
             task.created = new Date();
             task.isStarted = false;
             task.totalTimeSpent = 0;
