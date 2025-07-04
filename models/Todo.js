@@ -148,6 +148,14 @@ const todoSchema = new mongoose.Schema({
         ref: 'User',
     },
     repeatableCompleted: [{
+        completed: {
+            type: Boolean,
+            required: false
+        },
+        completedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
         startTime: {
             type: Date,
             required: true

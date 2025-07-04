@@ -53,7 +53,7 @@ async function checkAndUpdateIsToday() {
 
         let index = 0;
         for (const task of tasks) {
-            // console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
+            console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
             let isToday = false;
 
             // Base case: Check if the task is repeatable
@@ -142,9 +142,15 @@ async function checkAndUpdateIsToday() {
 
 
             }
-            // console.log(`\x1b[31mTask: ${task.task}, isToday: ${isToday}\x1b[0m`);
+            console.log(`\x1b[31mTask: ${task.task}, isToday: ${isToday}\x1b[0m`);
             task.isToday = isToday;
-            await task.save();
+            try {
+                console.log(`\x1b[33mDEBUG: Saving task: ${task.task}\x1b[0m`);
+                await task.save();
+                console.log(`\x1b[32mDEBUG: Task saved successfully: ${task.task}\x1b[0m`);
+            } catch (error) {
+                console.error(`\x1b[31mERROR: Failed to save task: ${task.task}\x1b[0m`, error);
+            }
             // console.log(`\x1b[32mTask: ${task.task}, isToday: ${task.isToday}\x1b[0m`);
 
             // const savedTask = await Todo.findById(task._id);
@@ -185,23 +191,21 @@ async function populateTodayList(todayList, tasks, username) {
 }
 
 async function resetDailyTask(task) {
-    if (task.repeatable) { //just a precaution
-        if (task.steps && task.steps.length > 0) {
-            task.steps.forEach(step => {
-                step.isDone = false;
-                step.completed = null;
-            });
-        }
-        if (task.isStarted && !task.isDone) { //Task was started but not completed
-            // console.log("DEBUG -- Task was started but not completed");
-              // Task was started but not completed
+    if (task.repeatable) {
+        console.log(`\x1b[33mDEBUG: Resetting repeatable task: ${task.task}\x1b[0m`);
+        if (task.isStarted && !task.isDone) {
+            console.log(`\x1b[31mDEBUG: Task was started but not completed\x1b[0m`);
+            console.log(`\x1b[33mDEBUG: Task steps: ${JSON.stringify(task.steps, null, 2)}\x1b[0m`);
             task.repeatableCompleted.push({
+                completed: false,
                 startTime: task.started,
                 duration: task.totalTimeSpent,
+                completionTime: task.completed || new Date(), // Include completed date if available
                 steps: task.steps?.map(step => ({
                     taskName: step.taskName,
-                    isDone: step.isDone,
-                    completed: step.completed || null // Include completed date if available
+                    isDone: step.isDone || false, // Ensure isDone is set to false
+                    completed: step.isDone ? step.completed : new Date(), // Include completed date if available
+                    completedBy: step.completedBy || null // Include completedBy if available
                 })) || [] // Handle cases where steps are undefined
             });
 
@@ -210,15 +214,21 @@ async function resetDailyTask(task) {
             task.totalTimeSpent = 0;
             task.started = null;
             task.repeatStreak = 0;
+
+            console.log(`\x1b[32mDEBUG: Task reset successfully\x1b[0m`);
+
         } else if (task.isDone) { //task was completed
             //    console.log("DEBUG -- Task was completed -- reseting the task");
             task.repeatableCompleted.push({
+                completed: true,
                 startTime: task.started,
                 completionTime: task.completed,
                 duration: task.totalTimeSpent,
+                completedBy: task.completedBy,
                 steps: task.steps?.map(step => ({
                     taskName: step.taskName,
-                    completed: step.completed
+                    completed: step.completed,
+                    completedBy: step.completedBy
                 })) || []
             });
             if (task.repeatStreak === undefined) {
@@ -237,7 +247,16 @@ async function resetDailyTask(task) {
             task.repeatStreak = 0;
             task.created = new Date();
         }
+        //just a precaution
+        if (task.steps && task.steps.length > 0) {
+            task.steps.forEach(step => {
+                step.isDone = false;
+                step.completed = null;
+                step.completedBy = null;
+            });
+        }
     }
+    console.log(`\x1b[32mDEBUG: Task ${task.task} reset successfully\x1b[0m`);
 
 }
 
