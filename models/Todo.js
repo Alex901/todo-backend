@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const { GlobalSettings, initializeGlobalSettings } = require('./GlobalSettings');
+const { calculateTaskScore, recalculateListScores } = require('../utils/listUtils');
 
 const stepSchema = new mongoose.Schema({
     id: Number,
@@ -177,13 +178,50 @@ const todoSchema = new mongoose.Schema({
     isToday: {
         type: Boolean,
         default: false
-    }
+    },
+    score: {
+        type: {
+            score: {
+                type: Number,
+                required: true,
+                default: 0
+            },
+            currency: {
+                type: Number,
+                required: true,
+                default: 0
+            }
+        },
+        required: true,
+        default: { score: 0, currency: 0 }
+    },
 },
     {
         collection: 'Entries',
         timestamps: true
     }
 );
+
+todoSchema.post('findOneAndUpdate', async function (doc, next) {
+    if (!doc) {
+        console.error(`\x1b[31mERROR: Document not found after update\x1b[0m`);
+        return next(new Error('Document not found'));
+    }
+
+    console.log(`\x1b[33mDEBUG: Full document after update - ${JSON.stringify(doc, null, 2)}\x1b[0m`);
+
+    try {
+        const Todo = require('../models/Todo'); // Lazy import to avoid circular dependency
+        await calculateTaskScore(doc, this.getUpdate());
+        await recalculateListScores(doc.inListNew);
+        console.log(`\x1b[33mDEBUG: Recalculated list scores for lists: ${doc.inListNew}\x1b[0m`);
+    } catch (error) {
+        console.error(`\x1b[31mERROR: Failed to update task or recalculate list scores: ${error.message}\x1b[0m`);
+        return next(error);
+    }
+
+    next(); // Ensure next() is called
+});
 
 todoSchema.pre('save', async function (next) {
     if (!this.repeatable) {

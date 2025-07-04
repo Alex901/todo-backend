@@ -5,6 +5,11 @@ const listSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    completed: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
     description: { //List description
         type: String,
         default: ''
@@ -58,7 +63,23 @@ const listSchema = new mongoose.Schema({
             },
         ],
         default: []
-    }
+    },
+    score: {
+        type: {
+            score: {
+                type: Number,
+                required: true,
+                default: 0
+            },
+            currency: {
+                type: Number,
+                required: true,
+                default: 0
+            }
+        },
+        required: true,
+        default: { score: 0, currency: 0 }
+    },
 
 }, {
     timestamps: true,

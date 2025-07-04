@@ -18,10 +18,14 @@ async function calculateAndAwardScore(task) {
 
             // Currency chance logic for repeatable tasks
             currencyChance = Math.min(0.01 * task.repeatStreak, 0.2);
-            console.log("DEBUG: calculateAndAwardScore score repeatable: ", score);
+            // console.log("DEBUG: calculateAndAwardScore score repeatable: ", score);
         } else {
             // Non-repeatable task scoring logic
             score = 1;
+
+            if(task.totalTimeSpent < 5*60*1000) { //if time spent is less than 5 minutes
+                score = 0;
+            }
 
             // Additional points for completing within the deadline
             if (task.dueDate) {
@@ -44,7 +48,7 @@ async function calculateAndAwardScore(task) {
             // Score increases with time spent on the task
             const hoursSpent = task.totalTimeSpent / (1000 * 60 * 60);
             score *= 1 + (0.05 * hoursSpent);
-            console.log("DEBUG: calculateAndAwardScore: score1: ", score);
+            // console.log("DEBUG: calculateAndAwardScore: score1: ", score);
 
             // Additional points for each completed step
             const completedSteps = task.steps.filter(step => step.isDone).length;
@@ -53,7 +57,7 @@ async function calculateAndAwardScore(task) {
             // Ensure the score does not exceed 10 points
             score = Math.min(score, 20);
 
-            console.log("DEBUG: calculateAndAwardScore: score: ", score);
+            // console.log("DEBUG: calculateAndAwardScore: score: ", score);
 
             // Currency chance logic for non-repeatable tasks
             currencyChance = score / 100;
