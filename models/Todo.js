@@ -202,6 +202,7 @@ const todoSchema = new mongoose.Schema({
     }
 );
 
+//This is a bit silly and should not be here
 todoSchema.post('findOneAndUpdate', async function (doc, next) {
     if (!doc) {
         console.error(`\x1b[31mERROR: Document not found after update\x1b[0m`);
@@ -223,6 +224,8 @@ todoSchema.post('findOneAndUpdate', async function (doc, next) {
     next(); // Ensure next() is called
 });
 
+// Resets data between modes so that you can switch between repeatable and non-repeatable todos
+// in edit task
 todoSchema.pre('save', async function (next) {
     if (!this.repeatable) {
         this.repeatIntervall = undefined;

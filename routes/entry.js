@@ -398,6 +398,9 @@ router.patch('/done', async (req, res) => {
     const timeSpent = currentTime - new Date(todo.started).getTime();
     const totalTimeSpent = todo.totalTimeSpent + timeSpent;
 
+    //Unlink tasks
+    await unlinkTasks(taskId);
+
     // Update the fields
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
       isDone: true,
