@@ -260,21 +260,24 @@ async function resetDailyTask(task) {
 
 }
 
-async function calculateTaskScore(task, update) {
+async function calculateTaskScore(task) {
+    console.log(`\x1b[33mDEBUG: Calculating score for task: ${task.task}\x1b[0m`);
+
     const maxScore = 50; // Maximum score for a task
     let baseScore = 0;
 
     // If time spent is below 5 minutes, set score to 0
-    if (update.totalTimeSpent < 5 * 60 * 1000) {
-        task.score.score = 2;
-        task.score.currency = 2;
+    if (task.totalTimeSpent < 5 * 60 * 1000) {
+        task.score.score = 0;
+        task.score.currency = 0;
         console.log(`\x1b[33mDEBUG: Total time spent is below 5 minutes. Score: ${task.score.score}, Currency: ${task.score.currency}\x1b[0m`);
+        await task.save(); // Save the updated task
         return;
     }
 
     // Apply difficulty multiplier
     let difficultyMultiplier = 1;
-    switch (update.difficulty || task.difficulty) {
+    switch (task.difficulty) {
         case 'VERY EASY':
             difficultyMultiplier = 0.5;
             break;
@@ -294,7 +297,7 @@ async function calculateTaskScore(task, update) {
 
     // Apply priority multiplier
     let priorityMultiplier = 1;
-    switch (update.priority || task.priority) {
+    switch (task.priority) {
         case 'VERY LOW':
             priorityMultiplier = 0.5;
             break;
@@ -313,13 +316,13 @@ async function calculateTaskScore(task, update) {
     }
 
     // Apply time spent multiplier
-    let timeMultiplier = Math.min(update.totalTimeSpent / 60, 1);
+    let timeMultiplier = Math.min(task.totalTimeSpent / 60, 1);
 
     // Apply steps multiplier
-    let stepsMultiplier = Math.min((update.steps?.length || task.steps?.length || 0) / 10, 1);
+    let stepsMultiplier = Math.min((task.steps?.length || 0) / 10, 1);
 
     // Apply urgent task bonus
-    let urgentBonus = update.isUrgent || task.isUrgent ? 5 : 0;
+    let urgentBonus = task.isUrgent ? 5 : 0;
 
     // Calculate total score
     baseScore = maxScore * difficultyMultiplier * priorityMultiplier * timeMultiplier * stepsMultiplier + urgentBonus;
@@ -331,11 +334,16 @@ async function calculateTaskScore(task, update) {
     task.score.currency = Math.ceil(task.score.score / 10);
 
     console.log(`\x1b[33mDEBUG: Updated task score: ${task.score.score}, currency: ${task.score.currency}\x1b[0m`);
+
+    // Save the updated task
+    await task.save();
 }
 
 async function recalculateListScores(listIds) {
     console.log(`\x1b[33mDEBUG: Recalculating list scores for list IDs: ${listIds}\x1b[0m`);
     try {
+        const Todo = require('../models/Todo'); // Lazy import to avoid circular dependency
+
         for (const listId of listIds) {
             const list = await List.findById(listId);
             if (!list) {
@@ -344,7 +352,7 @@ async function recalculateListScores(listIds) {
             }
 
             // Find all entries (todos) related to the list
-            const todos = await Todo.find({ inListNew: { $in: listIds } });
+            const todos = await Todo.find({ inListNew: { $in: listId } });
 
             // Calculate the total score and currency based on the entries
             let totalScore = 0;
