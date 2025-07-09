@@ -53,7 +53,7 @@ async function checkAndUpdateIsToday() {
 
         let index = 0;
         for (const task of tasks) {
-            console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
+            // console.log(`\x1b[35mDEBUG: task ${index}:`, task.task, "\x1b[0m");
             let isToday = false;
 
             // Base case: Check if the task is repeatable
@@ -260,125 +260,6 @@ async function resetDailyTask(task) {
 
 }
 
-async function calculateTaskScore(task) {
-    console.log(`\x1b[33mDEBUG: Calculating score for task: ${task.task}\x1b[0m`);
-
-    const maxScore = 50; // Maximum score for a task
-    let baseScore = 0;
-
-    // If time spent is below 5 minutes, set score to 0
-    if (task.totalTimeSpent < 5 * 60 * 1000) {
-        task.score.score = 0;
-        task.score.currency = 0;
-        console.log(`\x1b[33mDEBUG: Total time spent is below 5 minutes. Score: ${task.score.score}, Currency: ${task.score.currency}\x1b[0m`);
-        await task.save(); // Save the updated task
-        return;
-    }
-
-    // Apply difficulty multiplier
-    let difficultyMultiplier = 1;
-    switch (task.difficulty) {
-        case 'VERY EASY':
-            difficultyMultiplier = 0.5;
-            break;
-        case 'EASY':
-            difficultyMultiplier = 0.75;
-            break;
-        case 'NORMAL':
-            difficultyMultiplier = 1;
-            break;
-        case 'HARD':
-            difficultyMultiplier = 1.5;
-            break;
-        case 'VERY HARD':
-            difficultyMultiplier = 2;
-            break;
-    }
-
-    // Apply priority multiplier
-    let priorityMultiplier = 1;
-    switch (task.priority) {
-        case 'VERY LOW':
-            priorityMultiplier = 0.5;
-            break;
-        case 'LOW':
-            priorityMultiplier = 0.75;
-            break;
-        case 'NORMAL':
-            priorityMultiplier = 1;
-            break;
-        case 'HIGH':
-            priorityMultiplier = 1.5;
-            break;
-        case 'VERY HIGH':
-            priorityMultiplier = 2;
-            break;
-    }
-
-    // Apply time spent multiplier
-    let timeMultiplier = Math.min(task.totalTimeSpent / 60, 1);
-
-    // Apply steps multiplier
-    let stepsMultiplier = Math.min((task.steps?.length || 0) / 10, 1);
-
-    // Apply urgent task bonus
-    let urgentBonus = task.isUrgent ? 5 : 0;
-
-    // Calculate total score
-    baseScore = maxScore * difficultyMultiplier * priorityMultiplier * timeMultiplier * stepsMultiplier + urgentBonus;
-
-    // Ensure score does not exceed maxScore
-    task.score.score = Math.min(baseScore, maxScore);
-
-    // Calculate currency (rounded up)
-    task.score.currency = Math.ceil(task.score.score / 10);
-
-    console.log(`\x1b[33mDEBUG: Updated task score: ${task.score.score}, currency: ${task.score.currency}\x1b[0m`);
-
-    // Save the updated task
-    await task.save();
-}
-
-async function recalculateListScores(listIds) {
-    console.log(`\x1b[33mDEBUG: Recalculating list scores for list IDs: ${listIds}\x1b[0m`);
-    try {
-        const Todo = require('../models/Todo'); // Lazy import to avoid circular dependency
-
-        for (const listId of listIds) {
-            const list = await List.findById(listId);
-            if (!list) {
-                console.error(`\x1b[31mERROR: List with ID ${listId} not found\x1b[0m`);
-                continue; // Skip this list and move to the next one
-            }
-
-            // Find all entries (todos) related to the list
-            const todos = await Todo.find({ inListNew: { $in: listId } });
-
-            // Calculate the total score and currency based on the entries
-            let totalScore = 0;
-            let totalCurrency = 0;
-
-            for (const todo of todos) {
-                totalScore += todo.score.score; // Sum up the scores of all related entries
-                totalCurrency += todo.score.currency; // Sum up the currency of all related entries
-            }
-
-            // Update the list's score and currency
-            list.score = {
-                score: totalScore,
-                currency: totalCurrency
-            };
-
-            await list.save();
-            console.log(`\x1b[32mDEBUG: Updated list score for list ID ${listId}: ${list.score.score}, currency: ${list.score.currency}\x1b[0m`);
-        }
-    } catch (error) {
-        console.error(`\x1b[31mERROR: Failed to recalculate list scores\x1b[0m`, error);
-    }
-}
-
 module.exports = {
     checkAndUpdateIsToday,
-    calculateTaskScore,
-    recalculateListScores
 }

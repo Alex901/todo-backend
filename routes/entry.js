@@ -402,7 +402,7 @@ router.patch('/done', async (req, res) => {
     const updatedTodo = await Todo.findByIdAndUpdate(taskId, {
       isDone: true,
       completed: new Date(),
-      $inc: { __v: 1, repeatCount: 1 },
+      $inc: { __v: 1, repeatCount: 1 }, // Why ? 
       totalTimeSpent: totalTimeSpent,
       completedBy: user._id,
     }, { new: true });
