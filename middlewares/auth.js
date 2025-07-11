@@ -3,30 +3,24 @@ const User = require('../models/User');
 
 
 const authenticate = async (req, res, next) => {
- // console.log("DEBUG: auth header", req)
-  const token = req.cookies.token; // Get the token from the cookie
- // console.log('Token: ', token);
-
-  if (token) {
     try {
-      // console.log('Token found, processing..')
-      const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-     // console.log('Decoded token: ', decodedToken);
-      const user = await User.findById(decodedToken.userId);
-      if (user) {
-        req.user = user;
-      //  console.log('User found in auth: ', user);
-      } else {
-        console.error('User not found');
-      }
-    } catch (error) {
-      console.error('Invalid token', error);
-    }
-  } else {
-    console.error('No token found');
-  }
+        const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'Authentication token is missing' });
+        }
 
-  next();
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        const user = await User.findById(decoded.userId);
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+
+        req.user = user; // Attach the user object to the request
+        next();
+    } catch (error) {
+        console.error('[DEBUG] Authentication error:', error);
+        res.status(401).json({ message: 'Invalid or expired token' });
+    }
 };
 
 module.exports = { authenticate };
