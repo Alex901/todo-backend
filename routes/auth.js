@@ -389,7 +389,7 @@ router.get('/login/google/callback', passport.authenticate('google', {
 
         // Redirect to the frontend with the token
         const redirectUrl = process.env.NODE_ENV === 'production'
-            ? `${process.env.REDIRECT_URI}`
+            ? `${process.env.REDIRECT_URI_PROD}`
             : `${process.env.REDIRECT_URI_DEV}`;
 
         console.log('\x1b[34m%s\x1b[0m', `[DEBUG] Redirecting to: ${redirectUrl}`); // Blue text
