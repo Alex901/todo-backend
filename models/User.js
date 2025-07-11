@@ -26,9 +26,16 @@ const userSchema = new mongoose.Schema(
         message: props => `${props.value} is not a valid email!`
       }
     },
+    googleId: {
+      type: String,
+    },
+    googleRegistration: {
+      type: Boolean,
+      default: false // Indicates if the user registered via Google OAuth
+    },
     password: {
       type: String,
-      required: true
+   
     },
     verified: {
       type: Boolean,

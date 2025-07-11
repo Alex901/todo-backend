@@ -32,23 +32,27 @@ const allowOrigins = [
     'https://the-task-forge.netlify.app',
     'http://localhost:5173',
     'http://localhost:5000',
+    'http://localhost:3000',
     'https://habitforge.se',
     'https://api.habitforge.se',
+    'https://accounts.google.com' // Allow Google OAuth origin
 ]
 const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
 const errorLogPath = path.join(__dirname, 'logs', 'error.log');
 const corsOptions = {
     origin: function (origin, callback) {
-        if (allowOrigins.indexOf(origin) !== -1 || !origin || origin.endsWith('.habitforge.se')) {
-          callback(null, true)
+        console.log('[DEBUG] Incoming origin:', origin); // Log the origin
+        if (!origin || allowOrigins.includes(origin) || origin.endsWith('.habitforge.se')) { //This allows all subdomains of habitforge.se
+            callback(null, true)
         } else {
-          callback(new Error('Not allowed by CORS'))
+            console.log('\x1b[31m%s\x1b[0m', '[DEBUG] CORS rejected origin:', origin);
+            callback(new Error('Not allowed by CORS'));
         }
-      },
-    allowedHeaders: ['User', 'Content-Type'],
+    },
+    allowedHeaders: ['User', 'Content-Type', 'Authorization'],
     credentials: true
-  };
-  
+};
+
 app.use(cors(corsOptions));
 
 // Connect to MongoDB
