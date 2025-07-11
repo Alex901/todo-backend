@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User'); // Adjust the path to your User model
+const { generateUniqueUsername } = require('../utils/userUtils');
 
 const callbackURL =
     process.env.NODE_ENV === 'production'
@@ -23,20 +24,23 @@ passport.use(new GoogleStrategy({
 
         if (!user) {
             console.log('🟡 [DEBUG] User not found, creating a new account...');
+            console.log
 
             // Create a new user if one doesn't exist
             user = new User({
                 googleId: profile.id, // Save the Google ID for future logins
-                username: profile.displayName,
-                email,
-                verified: true // Google verifies the email, so mark it as verified
+                username: await generateUniqueUsername(profile.displayName),
+                email: email,
+                verified: true, // Google verifies the email, so mark it as verified
+                googleRegistration: true, // Indicate that this user registered via Google
+                password: 'X9v#8LpQz!T4r@Wm', // Placeholder password, not used for Google users
             });
 
             await user.save();
-            // console.log('🟢 [DEBUG] New user account created successfully.');
+            console.log('🟢 [DEBUG] New user account created successfully.');
         } else {
             console.log('🟢 [DEBUG] User found in the database.');
-            
+
             // If the user exists but doesn't have a Google ID, update it
             if (!user.googleId) {
                 user.googleId = profile.id;

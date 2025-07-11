@@ -31,11 +31,13 @@ const userSchema = new mongoose.Schema(
     },
     googleRegistration: {
       type: Boolean,
+      required: true,
       default: false // Indicates if the user registered via Google OAuth
     },
     password: {
       type: String,
-   
+      required: true,
+      defeult: ''
     },
     verified: {
       type: Boolean,

@@ -230,7 +230,7 @@ router.post('/create', async (req, res) => {
 
     const user = new User(req.body);
     await user.save();
-    
+
     let token;
 
     if (!user.verified) {
@@ -510,31 +510,39 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
     const { userData, oldPassword, newPassword } = req.body;
 
     // If oldPassword and newPassword are provided, authenticate the old password
+
+if (!user.googleRegistration && user.__v === 0) {
     if (oldPassword && newPassword) {
-      const isMatch = await user.comparePassword(oldPassword);
-      console.log("isMatch: ", isMatch);
-      if (!isMatch) {
-        return res.status(401).send({ message: 'Old password is incorrect' });
-      }
-      // Set the password to the new password
-      user.set({ password: newPassword });
-      user.__v++;
-      userData.password = newPassword;
-      console.log("newPassword: ", user.password);
+        const isMatch = await user.comparePassword(oldPassword);
+        console.log("isMatch: ", isMatch);
+        if (!isMatch) {
+            return res.status(401).send({ message: 'Old password is incorrect' });
+        }
+        // Set the password to the new password
+        user.set({ password: newPassword });
+        user.__v++;
+        userData.password = newPassword;
+        console.log("newPassword: ", user.password);
     }
+} else {
+    user.set({ password: newPassword });
+    userData.password = newPassword;
+    user.__v++;
+    console.log("newPassword: ", user.password);
+}
 
-    // console.log("userData: ", userData);
-    // Update the user data
-    Object.assign(user, userData);
+// console.log("userData: ", userData);
+// Update the user data
+Object.assign(user, userData);
 
 
-    // Save the updated user
-    const updatedUser = await user.save();
+// Save the updated user
+const updatedUser = await user.save();
 
-    res.send(updatedUser);
+res.send(updatedUser);
   } catch (error) {
-    res.status(500).send();
-  }
+  res.status(500).send();
+}
 });
 
 /**
@@ -825,7 +833,7 @@ router.patch('/addlist/:id', async (req, res) => {
     // Check if the list name already exists in the new data structure
     const isListNameExistsInNewStructure = await List.exists({ listName: nameLowerCase, owner: user._id });
 
-    if ( isListNameExistsInNewStructure) {
+    if (isListNameExistsInNewStructure) {
       return res.status(400).send({ error: 'List name already exists' });
     }
 
@@ -1632,141 +1640,141 @@ router.patch('/edit-user-list/:userId', async (req, res) => {
 });
 
 router.patch('/complete-project/:userId', async (req, res) => {
-    const { userId } = req.params;
-    const { projectId } = req.body;
+  const { userId } = req.params;
+  const { projectId } = req.body;
 
-    try {
-        // Step 1: Find the project
-        const project = await List.findById(projectId);
+  try {
+    // Step 1: Find the project
+    const project = await List.findById(projectId);
 
-        if (!project) {
-            return res.status(404).json({ message: 'Project not found' });
-        }
-
-        // Step 2: Check if the project is personal or group
-        if (project.type === 'userList') {
-            // Handle personal project
-            if (project.owner.toString() !== userId) {
-                return res.status(403).json({ message: 'You are not authorized to complete this project' });
-            }
-
-            // Save scores for later use
-            const { score, currency } = project.score;
-            console.log('Score:', score, 'Currency:', currency);
-
-            // Mark project as completed
-            project.completed = true;
-            await project.save();
-
-            // Reward the user
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-
-            user.settings.score += score;
-            user.settings.currency += currency;
-            await user.save();
-
-            // Notify the user
-            const notification = new Notification({
-                to: [userId],
-                type: 'award',
-                   message: `You have completed a project. You have been awarded ${score.toFixed(1)} points and ${currency} coins for your efforts.                 well done`
-            });
-            await notification.save();
-
-            return res.status(200).json({ message: 'Project completed successfully', project });
-        } else if (project.type === 'groupList') {
-            // Handle group project
-            const group = await Group.findById(project.owner).populate('members.member_id');
-            if (!group) {
-                return res.status(404).json({ message: 'Group not found' });
-            }
-
-            // Check if the user is a member with sufficient permissions
-            const member = group.members.find(m => m.member_id._id.toString() === userId);
-            if (!member || (member.role !== 'edit' && member.role !== 'moderator')) {
-                return res.status(403).json({ message: 'You do not have permission to complete this project' });
-            }
-
-            // Save scores for later use
-            const { score, currency } = project.score;
-            console.log('Score:', score, 'Currency:', currency);
-
-            // Mark project as completed
-            project.completed = true;
-            await project.save();
-
-            // Reward each group member
-            for (const groupMember of group.members) {
-                const user = groupMember.member_id;
-                user.settings.score += score;
-                user.settings.score += currency;
-                await user.save();
-
-                // Notify each member
-                const notification = new Notification({
-                    to: [user._id],
-                    type: 'award',
-                    message: `The group as completed "**${project.listName}**". has been completed. You have been awarded ${score.toFixed(1)} points and ${currency} coins.`
-                });
-                await notification.save();
-            }
-
-            return res.status(200).json({ message: 'Group project completed successfully', project });
-        } else {
-            return res.status(400).json({ message: 'Invalid project type' });
-        }
-    } catch (error) {
-        console.error('Error completing project', error);
-        res.status(500).json({ message: 'Internal server error' });
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
+
+    // Step 2: Check if the project is personal or group
+    if (project.type === 'userList') {
+      // Handle personal project
+      if (project.owner.toString() !== userId) {
+        return res.status(403).json({ message: 'You are not authorized to complete this project' });
+      }
+
+      // Save scores for later use
+      const { score, currency } = project.score;
+      console.log('Score:', score, 'Currency:', currency);
+
+      // Mark project as completed
+      project.completed = true;
+      await project.save();
+
+      // Reward the user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      user.settings.score += score;
+      user.settings.currency += currency;
+      await user.save();
+
+      // Notify the user
+      const notification = new Notification({
+        to: [userId],
+        type: 'award',
+        message: `You have completed a project. You have been awarded ${score.toFixed(1)} points and ${currency} coins for your efforts.                 well done`
+      });
+      await notification.save();
+
+      return res.status(200).json({ message: 'Project completed successfully', project });
+    } else if (project.type === 'groupList') {
+      // Handle group project
+      const group = await Group.findById(project.owner).populate('members.member_id');
+      if (!group) {
+        return res.status(404).json({ message: 'Group not found' });
+      }
+
+      // Check if the user is a member with sufficient permissions
+      const member = group.members.find(m => m.member_id._id.toString() === userId);
+      if (!member || (member.role !== 'edit' && member.role !== 'moderator')) {
+        return res.status(403).json({ message: 'You do not have permission to complete this project' });
+      }
+
+      // Save scores for later use
+      const { score, currency } = project.score;
+      console.log('Score:', score, 'Currency:', currency);
+
+      // Mark project as completed
+      project.completed = true;
+      await project.save();
+
+      // Reward each group member
+      for (const groupMember of group.members) {
+        const user = groupMember.member_id;
+        user.settings.score += score;
+        user.settings.score += currency;
+        await user.save();
+
+        // Notify each member
+        const notification = new Notification({
+          to: [user._id],
+          type: 'award',
+          message: `The group as completed "**${project.listName}**". has been completed. You have been awarded ${score.toFixed(1)} points and ${currency} coins.`
+        });
+        await notification.save();
+      }
+
+      return res.status(200).json({ message: 'Group project completed successfully', project });
+    } else {
+      return res.status(400).json({ message: 'Invalid project type' });
+    }
+  } catch (error) {
+    console.error('Error completing project', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 router.patch('/revive-project/:userId', async (req, res) => {
-    const { userId } = req.params;
-    const { projectId, reviveCost } = req.body;
+  const { userId } = req.params;
+  const { projectId, reviveCost } = req.body;
 
-    try {
-        // Step 1: Find the user
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Step 2: Check if the user has enough currency
-        if (user.settings.currency < reviveCost) {
-            return res.status(400).json({ message: 'Not enough currency to revive the project' });
-        }
-
-        // Step 3: Find the project
-        const project = await List.findById(projectId);
-        if (!project) {
-            return res.status(404).json({ message: 'Project not found' });
-        }
-
-        // Step 4: Mark the project as not completed
-        project.completed = false;
-        await project.save();
-
-        // Step 5: Deduct the revive cost from the user's currency
-        user.settings.currency -= reviveCost;
-        await user.save();
-
-        // Step 6: Notify the user about the revival
-        const notification = new Notification({
-            to: [userId],
-            type: 'info',
-            message: `You have successfully revived the project ${project.listName}.`
-        });
-        await notification.save();
-
-        return res.status(200).json({ message: 'Project revived successfully', project });
-    } catch (error) {
-        console.error('Error reviving project', error);
-        res.status(500).json({ message: 'Internal server error' });
+  try {
+    // Step 1: Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    // Step 2: Check if the user has enough currency
+    if (user.settings.currency < reviveCost) {
+      return res.status(400).json({ message: 'Not enough currency to revive the project' });
+    }
+
+    // Step 3: Find the project
+    const project = await List.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Step 4: Mark the project as not completed
+    project.completed = false;
+    await project.save();
+
+    // Step 5: Deduct the revive cost from the user's currency
+    user.settings.currency -= reviveCost;
+    await user.save();
+
+    // Step 6: Notify the user about the revival
+    const notification = new Notification({
+      to: [userId],
+      type: 'info',
+      message: `You have successfully revived the project ${project.listName}.`
+    });
+    await notification.save();
+
+    return res.status(200).json({ message: 'Project revived successfully', project });
+  } catch (error) {
+    console.error('Error reviving project', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 module.exports = router;
