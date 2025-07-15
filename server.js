@@ -41,7 +41,7 @@ const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
 const errorLogPath = path.join(__dirname, 'logs', 'error.log');
 const corsOptions = {
     origin: function (origin, callback) {
-        console.log('[DEBUG] Incoming origin:', origin); // Log the origin
+        // console.log('[DEBUG] Incoming origin:', origin); // Log the origin
         if (!origin || allowOrigins.includes(origin) || origin.endsWith('.habitforge.se')) { //This allows all subdomains of habitforge.se
             callback(null, true)
         } else {

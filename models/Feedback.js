@@ -78,7 +78,7 @@ feedbackSchema.pre('save', async function (next) {
     if (this.isNew) {
         try {
             // console.log('DEBUG -- type: ', this.type, ' subType: ', this.subType)
-            // const admins = await User.find({ role: 'admin' });
+            const admins = await User.find({ role: 'admin' });
 
             for (const admin of admins) {
                 const existingNotification = await Notification.findOne({ to: admin._id, subType: this.type });
@@ -124,6 +124,7 @@ feedbackSchema.post('save', async function (doc, next) {
         // console.log('DEBUG -- Feedback resolved: ', doc.resolved);
         try {
             const admins = await User.find({ role: 'admin' });
+            console.log('DEBUG -- Admins: ', admins.map(admin => admin._id.toString()));
             // console.log('DEBUG -- doc type: ', doc.type);
 
             for (const admin of admins) {

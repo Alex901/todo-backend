@@ -29,7 +29,13 @@ const userSchema = new mongoose.Schema(
     googleId: {
       type: String,
     },
-    googleRegistration: {
+    facebookId: {
+      type: String,
+    },
+    githubId: {
+      type: String,
+    },
+    googleRegistration: { //TODO: This should be socialRegistration as i will use the same for all social registration so fix this at some point
       type: Boolean,
       required: true,
       default: false // Indicates if the user registered via Google OAuth

@@ -329,12 +329,51 @@ router.get('/activate/:token', async (req, res) => {
     }
 });
 
-// Google OAuth login route
+/**
+ * @swagger
+ * /auth/login/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     description: Redirects the user to Google's OAuth 2.0 login page to authenticate and grant access to their profile and email.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       302:
+ *         description: Redirects to Google's OAuth 2.0 login page.
+ *       500:
+ *         description: Internal server error.
+ */
 router.get('/login/google', passport.authenticate('google', {
     scope: ['profile', 'email'] // Request user's profile and email
 }));
 
-// Google OAuth callback route
+/**
+ * @swagger
+ * /auth/login/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     description: Handles the callback from Google after the user logs in. Processes the user information and redirects to the frontend.
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Authorization code returned by Google.
+ *       - in: query
+ *         name: scope
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Scopes granted by the user.
+ *     responses:
+ *       302:
+ *         description: Redirects to the frontend with a token.
+ *       500:
+ *         description: Internal server error.
+ */
 router.get('/login/google/callback', passport.authenticate('google', {
     failureRedirect: '/', // Redirect on failure
     session: false // Disable sessions if using JWT
@@ -396,6 +435,39 @@ router.get('/login/google/callback', passport.authenticate('google', {
         return res.redirect(redirectUrl);
     } catch (error) {
         console.error('\x1b[31m%s\x1b[0m', '[DEBUG] Error during Google login callback:', error); // Red text
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.get('/login/facebook', passport.authenticate('facebook', {
+    scope: ['email'] // Request user's email
+}));
+
+router.get('/login/facebook/callback', passport.authenticate('facebook', {
+    failureRedirect: '/', // Redirect on failure
+    session: false // Disable sessions if using JWT
+}), async (req, res) => {
+    try {
+        // Generate a JWT token
+        const token = jwt.sign({ userId: req.user._id }, process.env.SECRET_KEY);
+        console.log('🟢 [DEBUG] Token generated successfully.');
+
+        // Set the token as a cookie
+        res.cookie('token', token, {
+            sameSite: 'Strict',
+            secure: true,
+            httpOnly: true
+        });
+
+        // Redirect to the frontend
+        const redirectUrl = process.env.NODE_ENV === 'production'
+            ? `${process.env.REDIRECT_URI_PROD}`
+            : `${process.env.REDIRECT_URI_DEV}`;
+
+        console.log(`🔵 [DEBUG] Redirecting to: ${redirectUrl}`);
+        return res.redirect(redirectUrl);
+    } catch (error) {
+        console.error('🔴 [DEBUG] Error during Facebook login callback:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
