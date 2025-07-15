@@ -8,7 +8,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /notifications:
+ * /:
  *   get:
  *     summary: Get notifications for the authenticated user
  *     description: Fetches all notifications for the authenticated user.
