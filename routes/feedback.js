@@ -136,7 +136,6 @@ router.get('/fetchOfflineFeedback', async (req, res) => {
 router.post('/post-feedback', async (req, res) => {
     //console.log('Feedback received: ', req.body);
     try {
-        console.log("DEBUG -- req.body in create feedback -- pre change: ", req.body)
         const { subType, type, ...otherFields } = req.body;
 
         const tmp = req.body.type;

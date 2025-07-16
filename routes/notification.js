@@ -69,18 +69,55 @@ const router = express.Router();
  *       scheme: bearer
  *       bearerFormat: JWT
  */
+// router.get('/', authenticate, async (req, res) => {
+//     try {
+//         const notifications = await Notification.find({ to: req.user._id });
+//         //console.log('Notifications: ', notifications);
+
+//         if (notifications.length === 0) {
+//             return res.status(200).send({ message: 'No notifications found' });
+//         }
+
+//         res.send(notifications);
+//     } catch (error) {
+//         console.error('Error fetching notifications: ', error);
+//         res.status(500).send({ message: 'Internal server error' });
+//     }
+// });
+
 router.get('/', authenticate, async (req, res) => {
     try {
-        const notifications = await Notification.find({ to: req.user._id });
-        //console.log('Notifications: ', notifications);
+        // Set headers for SSE
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
 
-        if (notifications.length === 0) {
-            return res.status(200).send({ message: 'No notifications found' });
-        }
+        console.log(`[DEBUG] SSE connection established for user: ${req.user._id}`);
 
-        res.send(notifications);
+        // Fetch all existing notifications for the user
+        const existingNotifications = await Notification.find({ to: req.user._id });
+
+        // Send all existing notifications as an initial batch
+        res.write(`data: ${JSON.stringify(existingNotifications)}\n\n`);
+
+        // Watch for new notifications in the database
+        const notificationStream = Notification.watch([
+            { $match: { 'fullDocument.to': req.user._id } }
+        ]);
+
+        notificationStream.on('change', (change) => {
+            console.log(`[DEBUG] New notification for user: ${req.user._id}`);
+            res.write(`data: ${JSON.stringify(change.fullDocument)}\n\n`);
+        });
+
+        // Handle client disconnect
+        req.on('close', () => {
+            console.log(`[DEBUG] SSE connection closed for user: ${req.user._id}`);
+            notificationStream.close();
+            res.end();
+        });
     } catch (error) {
-        console.error('Error fetching notifications: ', error);
+        console.error('Error setting up SSE for notifications: ', error);
         res.status(500).send({ message: 'Internal server error' });
     }
 });
