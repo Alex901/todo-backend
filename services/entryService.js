@@ -113,8 +113,51 @@ async function unlinkTasksFromTask(taskId, tasksBefore, tasksAfter) {
     }
 }
 
+async function checkMissedDeadlines() {
+    try {
+        // Find all tasks that are not completed and have a dueDate
+        const todos = await Todo.find({ isDone: false, dueDate: { $ne: null } });
+        console.log("Found todos for missed deadlines:", todos.length);
+
+        for (const todo of todos) {
+            // Ensure the task has a valid dueDate
+            if (!todo.dueDate) {
+                console.log(`Skipping task "${todo.task}" as it has no dueDate.`);
+                continue;
+            }
+
+            // Check if the dueDate has passed
+            if (todo.dueDate < new Date()) {
+                // Check if this dueDate is already recorded in `pastDueDate`
+                const alreadyRecorded = todo.pastDueDate.some(
+                    (entry) => entry.missedDueDate.getTime() === todo.dueDate.getTime()
+                );
+
+                if (!alreadyRecorded) {
+                    // Add a new entry to `pastDueDate`
+                    todo.pastDueDate.push({
+                        missedDueDate: todo.dueDate,
+                        wasStarted: todo.isStarted || false, // Default to false if undefined
+                        totalTimeSpent: todo.totalTimeSpent || 0, // Default to 0 if undefined
+                        message: `Missed deadline on ${todo.dueDate.toISOString()}`
+                    });
+
+                    console.log(`Added missed deadline for task: "${todo.task}"`);
+                }
+            }
+        }
+
+        // Save all updated tasks
+        await Promise.all(todos.map((todo) => todo.save()));
+        console.log('Finished checking for missed deadlines.');
+    } catch (error) {
+        console.error('Error checking for missed deadlines:', error);
+    }
+}
+
 module.exports = {
     linkTasks,
     unlinkTasks,
-    updateTaskLinks
+    updateTaskLinks,
+    checkMissedDeadlines
 };

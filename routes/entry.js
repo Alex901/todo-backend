@@ -725,7 +725,7 @@ router.patch('/cancel', async (req, res) => {
  *                   type: string
  *                   example: "Internal server error"
  */
-router.patch('/edit', authenticate, async (req, res) => {
+router.patch('/edit', async (req, res) => {
   try {
     const { taskId, updatedTask } = req.body;
 

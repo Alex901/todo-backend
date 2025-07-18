@@ -75,8 +75,29 @@ const todoSchema = new mongoose.Schema({
     isUrgent: {
         type: Boolean,
     },
-    dueDate: {
+    dueDate: { //deadline -- lol
         type: Date
+    },
+    pastDueDate: {
+        type: [
+            {
+                missedDueDate: {
+                    type: Date, // The due date that was missed
+                },
+                wasStarted: {
+                    type: Boolean, // Whether the task was started
+                },
+                totalTimeSpent: {
+                    type: Number, // Total time spent on the task (in minutes)
+                    default: 0
+                },
+                message: {
+                    type: String, // Optional message about the missed deadline
+                    default: ''
+                }
+            }
+        ],
+        default: []
     },
     description: {
         type: String
