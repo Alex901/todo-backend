@@ -568,9 +568,7 @@ router.patch('/start', async (req, res) => {
     // Update the fields
     todo.isStarted = true;
     todo.started = new Date();
-
-    // Manually increment the __v field
-    todo.__v += 1;
+    
 
     // Save the document, which will increment the __v field
     await todo.save();
