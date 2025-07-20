@@ -155,9 +155,111 @@ async function checkMissedDeadlines() {
     }
 }
 
+/**
+ * Maps priority and difficulty to numerical values for comparison.
+ */
+const priorityMap = {
+    'VERY HIGH': 5,
+    'HIGH': 4,
+    'NORMAL': 3,
+    'LOW': 2,
+    'VERY LOW': 1,
+    '': 0
+};
+
+const difficultyMap = {
+    'VERY HARD': 5,
+    'HARD': 4,
+    'NORMAL': 3,
+    'EASY': 2,
+    'VERY EASY': 1,
+    '': 0
+};
+
+/**
+ * Step 1: Sort tasks based on the specified attribute.
+ * @param {Array} tasks - Array of tasks to sort.
+ * @param {string} attribute - Attribute to sort by (priority, difficulty, estimatedTime, etc.).
+ * @param {string} order - Order of sorting ('ascending' or 'descending'). 
+* @returns {Array} - Sorted tasks.
+ */
+const sortTasks = (tasks, attribute, order) => {
+    const sortedTasks = tasks.sort((a, b) => {
+        if (attribute === 'priority') {
+            return priorityMap[b.priority] - priorityMap[a.priority];
+        } else if (attribute === 'difficulty') {
+            return difficultyMap[b.difficulty] - difficultyMap[a.difficulty];
+        } else if (attribute === 'estimatedTime') {
+            return (a.estimatedTime || 0) - (b.estimatedTime || 0); // Ascending order for time
+        } else if (attribute === 'urgent') {
+            return b.isUrgent - a.isUrgent; // Urgent tasks first
+        } else if (attribute === 'random') {
+            return Math.random() - 0.5; // Random order
+        } else {
+            throw new Error('Invalid attribute for sorting');
+        }
+    });
+
+    // Reverse the order if "ascending" is specified
+    if (order === 'ascending') {
+        return sortedTasks.reverse();
+    }
+
+    return sortedTasks; // Default is descending
+};
+
+/**
+ * Step 2: Schedule tasks day by day.
+ * @param {Array} tasks - Sorted tasks to schedule.
+ * @param {number} maxTasks - Maximum number of tasks per day.
+ * @returns {Array} - Scheduled tasks with their assigned days.
+ */
+const scheduleTasks = async (tasks, maxTasks) => {
+    const scheduledTasks = [];
+    let currentDate = new Date(); // Start from today
+
+    for (const task of tasks) {
+        let taskScheduled = false;
+
+        // Try to schedule the task day by day
+        while (!taskScheduled) {
+            // Fetch existing tasks for the current day
+            const dayStart = new Date(currentDate);
+            dayStart.setHours(0, 0, 0, 0);
+
+            const dayEnd = new Date(currentDate);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            const existingTasks = await Todo.find({
+                dueDate: { $gte: dayStart, $lte: dayEnd },
+                repeatable: { $ne: true }
+            });
+
+            // Calculate the total number of tasks and total estimated time for the day
+            const totalTasks = existingTasks.length;
+            const totalEstimatedTime = existingTasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+
+            // Check if the task can fit into the current day
+            if (totalTasks < maxTasks && totalEstimatedTime + (task.estimatedTime || 0) <= 1440) { // 1440 minutes = 24 hours
+                task.dueDate = new Date(dayStart); // Assign the task to the current day
+                await task.save(); // Save the updated task
+                scheduledTasks.push(task);
+                taskScheduled = true;
+            } else {
+                // Move to the next day
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+    }
+
+    return scheduledTasks;
+};
+
 module.exports = {
     linkTasks,
     unlinkTasks,
     updateTaskLinks,
-    checkMissedDeadlines
+    checkMissedDeadlines,
+    sortTasks,
+    scheduleTasks,
 };

@@ -7,7 +7,7 @@ const User = require('../models/User');
 const cors = require('cors');
 const listUtils = require('../utils/listUtils');
 const { calculateAndAwardScore } = require('../utils/scoreUtils');
-const { linkTasks, unlinkTasks, updateTaskLinks } = require('../services/entryService');
+const { linkTasks, unlinkTasks, updateTaskLinks, sortTasks, scheduleTasks } = require('../services/entryService');
 const { shouldBeRepeatedToday, addToTodayList } = require('../utils/entryUtils');
 const router = express.Router();
 
@@ -1058,6 +1058,55 @@ router.patch('/stepUncomplete', async (req, res) => {
   }
 });
 
+router.post('/updateManyTasks', async (req, res) => {
+    try {
+        const { sortOptions, optimizedOption, strippedTasks, maxTasks, totalPrice, loggedInUserId } = req.body;
 
+        console.log("Request body: ", req.body);
+
+        // Validate required parameters
+        if (!Array.isArray(strippedTasks) || strippedTasks.length === 0) {
+            return res.status(400).json({ message: 'Invalid or missing strippedTasks' });
+        }
+        if (typeof maxTasks !== 'number' || maxTasks <= 0) {
+            return res.status(400).json({ message: 'Invalid or missing maxTasks' });
+        }
+        if (typeof totalPrice !== 'number' || totalPrice <= 0) {
+            return res.status(400).json({ message: 'Invalid or missing totalPrice' });
+        }
+        if (!loggedInUserId) {
+            return res.status(400).json({ message: 'Invalid or missing loggedInUserId' });
+        }
+
+        // Fetch tasks from the database
+        const taskIds = strippedTasks.map(task => task._id);
+        const tasks = await Todo.find({ _id: { $in: taskIds }, repeatable: { $ne: true } });
+
+        // Step 1: Sort the tasks
+        const sortedTasks = sortTasks(tasks, optimizedOption, sortOptions);
+        console.log("sortedTasks: ", sortedTasks);
+
+        // Step 2: Schedule the tasks
+        const scheduledTasks = await scheduleTasks(sortedTasks, maxTasks);
+
+        // Deduct the totalPrice from the user's account
+        const user = await User.findById(loggedInUserId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.balance < totalPrice) {
+            return res.status(400).json({ message: 'Insufficient balance' });
+        }
+
+        user.balance -= totalPrice;
+        await user.save();
+
+        res.status(200).json({ message: 'Tasks scheduled successfully and balance deducted', scheduledTasks });
+    } catch (error) {
+        console.error('Error updating tasks:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 module.exports = router;

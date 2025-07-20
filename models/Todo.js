@@ -306,6 +306,42 @@ todoSchema.pre('findOneAndUpdate', function (next) {
     next();
 });
 
+//'bit dumb but it works' -- this is a bit of a hack to make sure that the isToday field is set correctly
+// when editing a task and this keeps it centralized in the model
+todoSchema.pre('save', function (next) {
+    if (this.dueDate) {
+        const now = new Date();
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0); // Start of today
+
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999); // End of today
+
+        const schedulingStart = new Date(this.dueDate);
+        schedulingStart.setMinutes(schedulingStart.getMinutes() - (this.estimatedTime || 0)); // Calculate start time
+
+        const allowedStart = new Date(this.dueDate);
+        allowedStart.setHours(9, 0, 0, 0); // 9 AM
+
+        const allowedEnd = new Date(this.dueDate);
+        allowedEnd.setHours(20, 0, 0, 0); // 8 PM
+
+        // Check if the task needs to start today
+        if (schedulingStart < allowedStart || schedulingStart > allowedEnd) {
+            this.isToday = true;
+        } else {
+            // Check if dueDate falls within today's range
+            this.isToday = this.dueDate >= todayStart && this.dueDate <= todayEnd;
+        }
+    } else {
+        // If no dueDate, it's not "today"
+        this.isToday = false;
+    }
+
+    next();
+});
+
+
 const Todo = mongoose.model('Todo', todoSchema);
 
 module.exports = Todo;
