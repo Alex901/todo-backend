@@ -12,8 +12,12 @@ const { checkAndUpdateIsToday } = require('../utils/listUtils');
 describe('List Utils', function () {
     let userA, userB, group, list, todayList;
     let tasks = {};
-    
+
     before(async function () {
+        if (process.env.NODE_ENV !== 'test') {
+            throw new Error('NODE_ENV is not set to "test". Tests should only run in the test environment.');
+        }
+
         userA = new User({ username: 'userA', password: 'password', email: 'userA@test.com' });
         userB = new User({ username: 'userB', password: 'password', email: 'userB@test.com' });
         await userA.save();
@@ -378,7 +382,7 @@ describe('List Utils', function () {
         });
 
         tasks.normalTaskStartedButNotCompletedNotToday = new Todo({
-            task:"Normal Task started but not completed not today",
+            task: "Normal Task started but not completed not today",
             owner: userA._id,
             inListNew: [list._id],
             isToday: false,
@@ -388,7 +392,7 @@ describe('List Utils', function () {
         });
 
         tasks.normalTaskStartedButNotCompletedToday = new Todo({
-            task:"Normal Task started but not completed today",
+            task: "Normal Task started but not completed today",
             owner: userA._id,
             inListNew: [list._id],
             isToday: false,
@@ -399,7 +403,7 @@ describe('List Utils', function () {
         });
 
 
-        
+
         for (const task of Object.values(tasks)) {
             await task.save();
         }
@@ -504,19 +508,19 @@ describe('List Utils', function () {
     it('Check repeatable weekly tasks on Monday', async function () {
         mockdate.set('2028-06-05'); // Set to a Monday
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.weekly1._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.weekly2._id);
         expect(updatedTask.inListNew).to.not.include(todayList._id);
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.true;
-    
+
         updatedTask = await Todo.findById(tasks.weekly4._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
@@ -528,13 +532,13 @@ describe('List Utils', function () {
     it('Check repeatable weekly tasks on Wednesday', async function () {
         mockdate.set('2028-06-07'); // Set to a Wednesday
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.weekly2._id);
         expect(updatedTask.inListNew).to.not.include(todayList._id);
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.true; //should be unchanged
-    
+
         updatedTask = await Todo.findById(tasks.weekly5._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
@@ -548,7 +552,7 @@ describe('List Utils', function () {
         await checkAndUpdateIsToday();
 
 
-    
+
         let updatedTask = await Todo.findById(tasks.weekly3._id);
         // console.log('Today list._id', todayList._id);
         // console.log('Updated Task (weekly3):', updatedTask);
@@ -566,19 +570,19 @@ describe('List Utils', function () {
         // Ensure no tasks are updated
         let updatedTask = await Todo.findById(tasks.weekly1._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.weekly2._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.weekly3._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.weekly4._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.weekly5._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         // Remove the tasks that have been tested
         await Todo.deleteOne({ _id: tasks.weekly1._id });
         await Todo.deleteOne({ _id: tasks.weekly2._id });
@@ -590,19 +594,19 @@ describe('List Utils', function () {
     it('Check repeatable monthly tasks at the start of the month', async function () {
         mockdate.set('2028-06-01'); // Set to the start of the month
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.monthlyStart._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyStart2._id);
         expect(updatedTask.inListNew).to.not.include(todayList._id);
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.isStarted).to.be.true;
         expect(updatedTask.isDone).to.be.true;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyStart3._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
@@ -627,7 +631,7 @@ describe('List Utils', function () {
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.false;
-    
+
         //Works
         updatedTask = await Todo.findById(tasks.monthlyEnd2._id);
         // console.log('Updated Task (monthlyEnd2):', updatedTask);
@@ -635,7 +639,7 @@ describe('List Utils', function () {
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.isStarted).to.be.true;
         expect(updatedTask.isDone).to.be.true;
-        
+
         //A task is today, should be reset and placed in the today list but as it was not completed
         //in the prior month, the streak should be reset
         updatedTask = await Todo.findById(tasks.monthlyEnd3._id);
@@ -645,31 +649,31 @@ describe('List Utils', function () {
         expect(updatedTask.isStarted).to.be.false; // Reset for the new month
         expect(updatedTask.isDone).to.be.false; // Reset for the new month
         expect(updatedTask.repeatStreak).to.equal(0); // Repeat streak should be incremented
-    
+
     });
 
     it('Check that no monthly tasks reset on a non-repeating day', async function () {
         mockdate.set('2028-06-15'); // Set to a mid-month day where no tasks should reset
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.monthlyStart._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyEnd._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyStart2._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyEnd2._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyStart3._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         updatedTask = await Todo.findById(tasks.monthlyEnd3._id);
         expect(updatedTask.isToday).to.be.false;
-    
+
         // Remove all the monthly tasks that have been tested
         await Todo.deleteOne({ _id: tasks.monthlyStart._id });
         await Todo.deleteOne({ _id: tasks.monthlyEnd._id });
@@ -682,13 +686,13 @@ describe('List Utils', function () {
     it('Check repeatable yearly tasks at the start of the year', async function () {
         mockdate.set('2028-01-01'); // Set to the start of the year
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.yearlyStart._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.false;
-    
+
         // Remove the task that has been tested
         await Todo.deleteOne({ _id: tasks.yearlyStart._id });
     });
@@ -696,64 +700,64 @@ describe('List Utils', function () {
     it('Check repeatable yearly tasks at the end of the year', async function () {
         mockdate.set('2028-12-31'); // Set to the end of the year
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.yearlyEnd._id);
         expect(updatedTask.inListNew).to.include(todayList._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.isDone).to.be.false;
-    
+
         // Remove the task that has been tested
         await Todo.deleteOne({ _id: tasks.yearlyEnd._id });
     });
     it('Check normal task with deadline', async function () {
         mockdate.set('2022-12-31');
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.normalTaskWithDeadline._id);
         expect(updatedTask.isToday).to.be.true;
         expect(updatedTask.inListNew).to.include(todayList._id);
     });
-    
+
     it('Check normal task with deadline and estimated time', async function () {
         mockdate.set('2023-12-29');
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.normalTaskWithDeadlineAndEstimatedTime._id);
         expect(updatedTask.isToday).to.be.true; // Adjusted deadline is today
         expect(updatedTask.inListNew).to.include(todayList._id);
     });
-    
+
     it('Check normal task with deadline and long estimated time', async function () {
         mockdate.set('2022-12-31');
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.normalTaskWithDeadlineAndLongEstimatedTime._id);
         expect(updatedTask.isToday).to.be.false; // Adjusted deadline is not today
         expect(updatedTask.inListNew).to.not.include(todayList._id);
-    
+
         // Set the date to the adjusted deadline day
         mockdate.set('2023-01-01');
         await checkAndUpdateIsToday();
-    
+
         updatedTask = await Todo.findById(tasks.normalTaskWithDeadlineAndLongEstimatedTime._id);
         expect(updatedTask.isToday).to.be.true; // Adjusted deadline is today
         expect(updatedTask.inListNew).to.include(todayList._id);
     });
-    
+
     it('Check normal task without deadline', async function () {
         mockdate.set('2022-12-31');
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.normalTaskWithoutDeadline._id);
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.inListNew).to.not.include(todayList._id);
     });
-    
+
     it('Check normal task with deadline but done', async function () {
         mockdate.set('2022-12-31');
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.normalTaskWithDeadlineButDone._id);
         expect(updatedTask.isToday).to.be.false;
         expect(updatedTask.inListNew).to.not.include(todayList._id);
@@ -762,7 +766,7 @@ describe('List Utils', function () {
     it('Check normal task started but not completed not today', async function () {
         mockdate.set('2022-05-31'); //Irrelevant for this test
         await checkAndUpdateIsToday();
-    
+
         let updatedTask = await Todo.findById(tasks.normalTaskStartedButNotCompletedNotToday._id);
         expect(updatedTask.isStarted).to.be.false;
         expect(updatedTask.inListNew).to.not.include(todayList._id);

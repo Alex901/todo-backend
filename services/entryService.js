@@ -218,35 +218,61 @@ const scheduleTasks = async (tasks, maxTasks) => {
     const scheduledTasks = [];
     let currentDate = new Date(); // Start from today
 
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0); // Start of today
+
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999); // End of today
+
     for (const task of tasks) {
         let taskScheduled = false;
 
         // Try to schedule the task day by day
         while (!taskScheduled) {
-            // Fetch existing tasks for the current day
+            // Define the scheduling window for the current day
             const dayStart = new Date(currentDate);
-            dayStart.setHours(0, 0, 0, 0);
+            dayStart.setHours(9, 0, 0, 0); // Start at 9 AM
 
             const dayEnd = new Date(currentDate);
-            dayEnd.setHours(23, 59, 59, 999);
+            dayEnd.setHours(20, 0, 0, 0); // End at 8 PM
 
+            // Fetch existing tasks for the current day
             const existingTasks = await Todo.find({
                 dueDate: { $gte: dayStart, $lte: dayEnd },
                 repeatable: { $ne: true }
-            });
+            }).sort({ dueDate: 1 }); // Sort by dueDate to process in order
 
-            // Calculate the total number of tasks and total estimated time for the day
-            const totalTasks = existingTasks.length;
-            const totalEstimatedTime = existingTasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+            // Calculate the earliest available time slot
+            let availableStartTime = new Date(dayStart);
 
-            // Check if the task can fit into the current day
-            if (totalTasks < maxTasks && totalEstimatedTime + (task.estimatedTime || 0) <= 1440) { // 1440 minutes = 24 hours
-                task.dueDate = new Date(dayStart); // Assign the task to the current day
+            for (const existingTask of existingTasks) {
+                const existingTaskEndTime = new Date(existingTask.dueDate);
+                existingTaskEndTime.setMinutes(existingTaskEndTime.getMinutes() + (existingTask.estimatedTime || 0));
+
+                // If there's a gap before the existing task, schedule the new task there
+                if (availableStartTime < existingTask.dueDate &&
+                    new Date(availableStartTime.getTime() + (task.estimatedTime || 0) * 60000) <= existingTask.dueDate) {
+                    break;
+                }
+
+                // Update the available start time to after the existing task
+                availableStartTime = new Date(existingTaskEndTime);
+            }
+
+            // Ensure the task fits within the scheduling window
+            const taskEndTime = new Date(availableStartTime.getTime() + (task.estimatedTime || 0) * 60000);
+            if (taskEndTime <= dayEnd) {
+                task.dueDate = availableStartTime; // Assign the task to the available start time
+                if (task.dueDate >= todayStart && task.dueDate <= todayEnd) {
+                    task.isToday = true; // Mark the task as "today"
+                } else {
+                    task.isToday = false; // Ensure it's false for other days
+                }
                 await task.save(); // Save the updated task
                 scheduledTasks.push(task);
                 taskScheduled = true;
             } else {
-                // Move to the next day
+                // Move to the next day if the task doesn't fit
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         }
