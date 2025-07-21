@@ -202,6 +202,9 @@ const sortTasks = (tasks, attribute, order) => {
 
     // Reverse the order if "ascending" is specified
     if (order === 'ascending') {
+        if(attribute === 'urgent') {
+            return sortedTasks;
+        }
         return sortedTasks.reverse();
     }
 

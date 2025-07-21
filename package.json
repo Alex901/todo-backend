@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test mocha -r esm --timeout 30000 tests/listUtils.test.js --exit",
+    "test": "cross-env NODE_ENV=test mocha -r esm --timeout 30000 tests/entryService.test.js --exit",
     "dev": "nodemon server.js",
     "start": "node server.js"
   },

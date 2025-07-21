@@ -13,6 +13,7 @@ describe('List Utils', function () {
     let userA, userB, group, list, todayList;
     let tasks = {};
 
+
     before(async function () {
         if (process.env.NODE_ENV !== 'test') {
             throw new Error('NODE_ENV is not set to "test". Tests should only run in the test environment.');
