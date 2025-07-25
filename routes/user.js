@@ -511,38 +511,38 @@ router.patch('/edituser/:id', authenticate, async (req, res) => {
 
     // If oldPassword and newPassword are provided, authenticate the old password
 
-if (!user.googleRegistration && user.__v === 0) {
-    if (oldPassword && newPassword) {
+    if (!user.googleRegistration && user.__v === 0) {
+      if (oldPassword && newPassword) {
         const isMatch = await user.comparePassword(oldPassword);
         console.log("isMatch: ", isMatch);
         if (!isMatch) {
-            return res.status(401).send({ message: 'Old password is incorrect' });
+          return res.status(401).send({ message: 'Old password is incorrect' });
         }
         // Set the password to the new password
         user.set({ password: newPassword });
         user.__v++;
         userData.password = newPassword;
         console.log("newPassword: ", user.password);
+      }
+    } else {
+      user.set({ password: newPassword });
+      userData.password = newPassword;
+      user.__v++;
+      console.log("newPassword: ", user.password);
     }
-} else {
-    user.set({ password: newPassword });
-    userData.password = newPassword;
-    user.__v++;
-    console.log("newPassword: ", user.password);
-}
 
-// console.log("userData: ", userData);
-// Update the user data
-Object.assign(user, userData);
+    // console.log("userData: ", userData);
+    // Update the user data
+    Object.assign(user, userData);
 
 
-// Save the updated user
-const updatedUser = await user.save();
+    // Save the updated user
+    const updatedUser = await user.save();
 
-res.send(updatedUser);
+    res.send(updatedUser);
   } catch (error) {
-  res.status(500).send();
-}
+    res.status(500).send();
+  }
 });
 
 /**
@@ -1631,6 +1631,11 @@ router.patch('/edit-user-list/:userId', async (req, res) => {
     // Update the list with the new data
     list.set(editedListData);
     await list.save();
+
+    if (user.settings.activeView === 'list') {
+      user.activeList = editedListData.listName || list.listName; // Update active list if listName is provided
+      await user.save();
+    }
 
     res.status(200).json({ message: 'List edited successfully', list });
   } catch (error) {
