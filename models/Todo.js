@@ -8,6 +8,7 @@ const stepSchema = new mongoose.Schema({
     taskName: String,
     isDone: Boolean,
     completed: Date,
+    reps: Number,
     completedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -216,6 +217,35 @@ const todoSchema = new mongoose.Schema({
         required: true,
         default: { score: 0, currency: 0 }
     },
+    dynamicSteps: {
+        type: {
+            isEnabled: {
+                type: Boolean,
+                default: false
+            },
+            increment: { //This is un percent
+                type: Number,
+                default: 1,
+                min: 1, // Minimum value
+                max: 100, // Maximum value
+                validate: {
+                    validator: function (value) {
+                        return value >= 1 && value <= 100; // Ensure value is between 1 and 100
+                    },
+                    message: 'Increment must be between 1 and 100'
+                },
+                totalPrice: {
+                    type: Number,
+                    default: 0
+                },
+            },
+            incrementInterval: { //In minutes
+                type: String,
+                enum: ['per repeat', 'per day', 'per week', 'per month','per year'],
+                default: 'per repeat',
+            },
+        }
+    }
 },
     {
         collection: 'Entries',
