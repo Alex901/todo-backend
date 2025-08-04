@@ -234,15 +234,15 @@ const todoSchema = new mongoose.Schema({
                     },
                     message: 'Increment must be between 1 and 100'
                 },
-                totalPrice: {
-                    type: Number,
-                    default: 0
-                },
             },
             incrementInterval: { //In minutes
                 type: String,
-                enum: ['per repeat', 'per day', 'per week', 'per month','per year'],
+                enum: ['per repeat', 'per day', 'per week', 'per month', 'per year'],
                 default: 'per repeat',
+            },
+            totalPrice: {
+                type: Number,
+                default: 0
             },
         }
     }

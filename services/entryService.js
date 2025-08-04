@@ -1,4 +1,8 @@
 const Todo = require('../models/Todo');
+const User = require('../models/User');
+const Group = require('../models/Group');
+const Notification = require('../models/Notification'); // Assuming you have a notification model
+const numberWordsToNumbers = require('../utils/numberMapping');
 
 async function linkTasks(taskId, tasksBefore, tasksAfter) {
     console.log('Linking Tasks Before:', tasksBefore);
@@ -202,7 +206,7 @@ const sortTasks = (tasks, attribute, order) => {
 
     // Reverse the order if "ascending" is specified
     if (order === 'ascending') {
-        if(attribute === 'urgent') {
+        if (attribute === 'urgent') {
             return sortedTasks;
         }
         return sortedTasks.reverse();
@@ -284,6 +288,115 @@ const scheduleTasks = async (tasks, maxTasks) => {
     return scheduledTasks;
 };
 
+async function updateDynamicSteps() {
+    const tasks = await Todo.find({ 'dynamicSteps.isEnabled': true });
+    console.log(`Found ${tasks.length} tasks with dynamic steps enabled.`);
+
+    for (const task of tasks) {
+        const { dynamicSteps, owner, createdAt, updatedAt, repeatInterval, isToday } = task;
+        const { increment, incrementInterval, totalPrice } = dynamicSteps;
+
+        const now = new Date();
+        let shouldIncrement = false;
+
+        // Determine if the step should be incremented based on incrementInterval
+        if (incrementInterval === 'per repeat') {
+            if (isToday) {
+                shouldIncrement = true;
+            }
+        } else {
+            const intervalMapping = {
+                'per day': 24 * 60 * 60 * 1000, // 1 day in ms
+                'per week': 7 * 24 * 60 * 60 * 1000, // 1 week in ms
+                'per month': 30 * 24 * 60 * 60 * 1000, // Approx. 1 month in ms
+                'per year': 365 * 24 * 60 * 60 * 1000 // Approx. 1 year in ms
+            };
+
+            const intervalMs = intervalMapping[incrementInterval];
+            if (intervalMs && now - updatedAt >= intervalMs) {
+                shouldIncrement = true;
+            }
+        }
+
+        if (!shouldIncrement) {
+            continue; // Skip if the interval hasn't passed
+        }
+
+        // Check if the owner has enough currency
+        let ownerEntity = null;
+
+        if (owner) {
+            const user = await User.findById(owner);
+            const group = await Group.findById(owner);
+
+            if (group) {
+                // If the owner is a group, find the group's owner
+                ownerEntity = await User.findById(group.owner);
+            } else if (user) {
+                ownerEntity = user;
+            }
+        }
+
+        const ownerCurrency = ownerEntity?.settings.currency || 0;
+
+        if (ownerCurrency < totalPrice) {
+            // Disable dynamic steps and notify the owner
+            task.dynamicSteps.isEnabled = false;
+            await task.save();
+
+            const notification = new Notification({
+                to: owner,
+                message: `Dynamic steps were disabled for task "${task.task}" due to insufficient currency.`,
+                type: 'info',
+                createdAt: new Date()
+            });
+            await notification.save();
+            continue; // Skip further processing for this task
+        } else {
+            ownerEntity.settings.currency -= totalPrice; // Deduct the currency
+            await ownerEntity.save();
+        }
+
+        // Increment steps
+        for (const step of task.steps) {
+            const oldReps = step.reps || 0;
+            const newReps = Math.ceil(oldReps * (1 + increment / 100)); // Round to the nearest whole number
+
+            if (newReps !== oldReps) {
+                step.reps = newReps;
+
+                // Update taskName to reflect new reps
+                const taskName = step.taskName || '';
+
+                // Check for numerical representation
+                let updatedTaskName = taskName.replace(/\d+/, newReps);
+
+                // Check for alphabetical representation if no numerical match is found
+                if (updatedTaskName === taskName) {
+                    for (const language of Object.keys(numberWordsToNumbers)) {
+                        for (const [word, number] of Object.entries(numberWordsToNumbers[language])) {
+                            const regex = new RegExp(`\\b${word}\\b`, 'i'); // Match whole word, case-insensitive
+                            if (regex.test(taskName) && number === oldReps) {
+                                updatedTaskName = taskName.replace(regex, newReps.toString());
+                                break;
+                            }
+                        }
+                        if (updatedTaskName !== taskName) {
+                            break; // Exit language loop if a match is found
+                        }
+                    }
+                }
+
+                step.taskName = updatedTaskName;
+            }
+        }
+
+        // Save the updated task
+        task.updatedAt = now;
+        await task.save();
+    }
+}
+
 module.exports = {
     linkTasks,
     unlinkTasks,
@@ -291,4 +404,5 @@ module.exports = {
     checkMissedDeadlines,
     sortTasks,
     scheduleTasks,
+    updateDynamicSteps
 };
