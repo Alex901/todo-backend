@@ -293,8 +293,13 @@ async function updateDynamicSteps() {
     console.log(`Found ${tasks.length} tasks with dynamic steps enabled.`);
 
     for (const task of tasks) {
-        const { dynamicSteps, owner, createdAt, updatedAt, repeatInterval, isToday } = task;
+        const { dynamicSteps, owner, updatedAt, isToday, repeatable } = task;
         const { increment, incrementInterval, totalPrice } = dynamicSteps;
+
+        if (task.repeatable === false) {
+            console.log(`Skipping task "${task.task}" because it is not repeatable thus irrelevant.`);
+            continue;
+        }
 
         const now = new Date();
         let shouldIncrement = false;
@@ -314,6 +319,8 @@ async function updateDynamicSteps() {
 
             const intervalMs = intervalMapping[incrementInterval];
             if (intervalMs && now - updatedAt >= intervalMs) {
+                console.log("Incrementing steps for task:", task.task);
+                console.log("Task owner:", owner);
                 shouldIncrement = true;
             }
         }
@@ -346,7 +353,7 @@ async function updateDynamicSteps() {
 
             const notification = new Notification({
                 to: owner,
-                message: `Dynamic steps were disabled for task "${task.task}" due to insufficient currency.`,
+                message: `Dynamic steps were disabled due to insufficient funds for task "${task.task}".`,
                 type: 'info',
                 createdAt: new Date()
             });
@@ -360,35 +367,36 @@ async function updateDynamicSteps() {
         // Increment steps
         for (const step of task.steps) {
             const oldReps = step.reps || 0;
-            const newReps = Math.ceil(oldReps * (1 + increment / 100)); // Round to the nearest whole number
+            const preciseReps = oldReps * (1 + increment / 100); // Calculate the precise reps value
 
-            if (newReps !== oldReps) {
-                step.reps = newReps;
+            // Round up the displayed reps value
+            const displayedReps = Math.round(preciseReps);
 
-                // Update taskName to reflect new reps
-                const taskName = step.taskName || '';
+            // Save the precise reps value
+            step.reps = preciseReps;
 
-                // Check for numerical representation
-                let updatedTaskName = taskName.replace(/\d+/, newReps);
+            // Update taskName to reflect the rounded-up reps
+            const taskName = step.taskName || '';
+            let updatedTaskName = taskName.replace(/\d+/, displayedReps); // Replace numerical representation
 
-                // Check for alphabetical representation if no numerical match is found
-                if (updatedTaskName === taskName) {
-                    for (const language of Object.keys(numberWordsToNumbers)) {
-                        for (const [word, number] of Object.entries(numberWordsToNumbers[language])) {
-                            const regex = new RegExp(`\\b${word}\\b`, 'i'); // Match whole word, case-insensitive
-                            if (regex.test(taskName) && number === oldReps) {
-                                updatedTaskName = taskName.replace(regex, newReps.toString());
-                                break;
-                            }
-                        }
-                        if (updatedTaskName !== taskName) {
-                            break; // Exit language loop if a match is found
+            // Check for alphabetical representation if no numerical match is found
+            if (updatedTaskName === taskName) {
+                for (const language of Object.keys(numberWordsToNumbers)) {
+                    for (const [word, number] of Object.entries(numberWordsToNumbers[language])) {
+                        const regex = new RegExp(`\\b${word}\\b`, 'i'); // Match whole word, case-insensitive
+                        if (regex.test(taskName) && number === oldReps) {
+                            updatedTaskName = taskName.replace(regex, displayedReps.toString());
+                            break;
                         }
                     }
+                    if (updatedTaskName !== taskName) {
+                        break; // Exit language loop if a match is found
+                    }
                 }
-
-                step.taskName = updatedTaskName;
             }
+
+            // Update the taskName with the rounded-up reps
+            step.taskName = updatedTaskName;
         }
 
         // Save the updated task
