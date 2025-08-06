@@ -308,6 +308,7 @@ async function updateDynamicSteps() {
         if (incrementInterval === 'per repeat') {
             if (isToday) {
                 shouldIncrement = true;
+                console.log("Incrementing steps for task:", task.task);
             }
         } else {
             const intervalMapping = {
@@ -320,7 +321,6 @@ async function updateDynamicSteps() {
             const intervalMs = intervalMapping[incrementInterval];
             if (intervalMs && now - updatedAt >= intervalMs) {
                 console.log("Incrementing steps for task:", task.task);
-                console.log("Task owner:", owner);
                 shouldIncrement = true;
             }
         }
@@ -342,9 +342,12 @@ async function updateDynamicSteps() {
             } else if (user) {
                 ownerEntity = user;
             }
+        } else {
+            console.error('Owner field is missing or undefined.');
+            continue; // Skip processing for this task
         }
 
-        const ownerCurrency = ownerEntity?.settings.currency || 0;
+        const ownerCurrency = ownerEntity?.settings.currency;
 
         if (ownerCurrency < totalPrice) {
             // Disable dynamic steps and notify the owner
@@ -360,7 +363,7 @@ async function updateDynamicSteps() {
             await notification.save();
             continue; // Skip further processing for this task
         } else {
-            ownerEntity.settings.currency -= totalPrice; // Deduct the currency
+            ownerEntity.settings.currency = Math.round((ownerEntity.settings.currency - totalPrice) * 10) / 10; // Deduct and round to one decimal
             await ownerEntity.save();
         }
 
@@ -373,7 +376,7 @@ async function updateDynamicSteps() {
             const displayedReps = Math.round(preciseReps);
 
             // Save the precise reps value
-            step.reps = preciseReps;
+            step.reps = Math.round(preciseReps * 100) / 100;
 
             // Update taskName to reflect the rounded-up reps
             const taskName = step.taskName || '';

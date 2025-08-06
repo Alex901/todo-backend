@@ -8,13 +8,13 @@ cron.schedule('0 0 0 * * *', async () => {
     console.log('Running daily scheduled jobs...');
 
     try {
-        // // Run updateToday job
-        // console.log('Running checkAndUpdateIsToday job...');
-        // await checkAndUpdateIsToday();
+        //Run updateToday job
+        console.log('Running checkAndUpdateIsToday job...');
+        await checkAndUpdateIsToday();
 
-        // // Run checkMissedDeadlines job
-        // console.log('Running checkMissedDeadlines job...');
-        // await checkMissedDeadlines();
+        // Run checkMissedDeadlines job
+        console.log('Running checkMissedDeadlines job...');
+        await checkMissedDeadlines();
 
         console.log('Running updateDynamicSteps job...');
         updateDynamicSteps();
