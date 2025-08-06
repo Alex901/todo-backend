@@ -250,7 +250,11 @@ router.post('/create', async (req, res) => {
     } else {
       if (user.verified === false || user.verified === undefined) {
         // console.log('Activation link: ', activationLink);
-        await sendMail(user.email, 'Activate your account', `Please click the following link to ${activationHtmlLink}.`);
+        await sendMail(
+    user.email,
+    'Welcome to Habitforge! Activate your account',
+    `Welcome to Habitforge! <br><br> We're thrilled to have you join our community. <br><br> Here comes your link to activate your account: <br> ${activationHtmlLink} <br><br> We hope you'll enjoy your stay and achieve great things with us!`
+);
       }
     }
 
