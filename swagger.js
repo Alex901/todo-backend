@@ -14,7 +14,7 @@ const options = {
         url: 'http://localhost:5000', // Local server URL
       },
       {
-        url: 'https://todo-backend-gkdo.onrender.com', // Hosted server URL
+        url: 'https://habitforge.se/', // Hosted server URL
       },
     ],
   },
