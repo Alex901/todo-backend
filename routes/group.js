@@ -729,7 +729,7 @@ router.delete('/deleteGroupList/:listId/:ownerId', async (req, res) => {
 
     try {
         // Find the list
-        const list = await List.findOne({ _id: listId, owner: ownerId});
+        const list = await List.findOne({ _id: listId, owner: ownerId });
         if (!list) {
             return res.status(404).json({ message: 'List not found' });
         }
@@ -744,7 +744,53 @@ router.delete('/deleteGroupList/:listId/:ownerId', async (req, res) => {
     }
 });
 
-module.exports = router;
+router.patch('/editGroupList', async (req, res) => {
+    const { listId, listName, description, visibility, userId } = req.body;
+    console.log("DEBUG: Name: ", listName);
 
+    try {
+        // Find the list by its ID
+        const list = await List.findById(listId);
+
+
+        if (!list) {
+            return res.status(404).json({ message: 'List not found' });
+        }
+
+        const oldName = list.listName;
+
+        // Check if the user is authorized to edit the list
+        const group = await Group.findById(list.owner); // Fetch the group that owns the list
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found' });
+        }
+
+        const member = group.members.find(member => member.member_id.toString() === userId);
+        if (!member || (member.role !== 'edit' && member.role !== 'moderator')) {
+            return res.status(403).json({ message: 'You do not have permission to edit this list' });
+        }
+
+        // Update the list fields
+        if (listName) list.listName = listName;
+        if (description) list.description = description;
+        if (visibility) list.visibility = visibility;
+
+        await list.save(); // Save the updated list
+
+        const user = await User.findById(userId);
+
+        if (user.activeList === oldName) {
+            if (listName && listName !== oldName) {
+                user.activeList = listName; // Update active list only if the list name is explicitly changed
+                await user.save();
+            }
+        }
+
+        res.status(200).json({ message: 'Group list updated successfully', list });
+    } catch (error) {
+        console.error('Error updating group list:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 module.exports = router;
