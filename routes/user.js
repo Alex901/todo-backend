@@ -106,45 +106,7 @@ router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'),
 
   blobStream.end(req.file.buffer);
 });
-router.patch('/updateprofilepicture/:id', authenticate, upload.single('avatar'), async (req, res) => {
-  // console.log("Service Account ", serviceAccount);
-  if (!req.file) {
-    res.status(400).send('No file uploaded.');
-    return;
-  }
 
-  // Create a new blob in the bucket and upload the file data to the blob
-  const blob = bucket.file(req.file.originalname);
-  const blobStream = blob.createWriteStream();
-
-  blobStream.on('error', err => {
-    console.error('Error uploading file', err);
-    res.status(500).send('Internal server error');
-  });
-
-  blobStream.on('finish', async () => {
-    // The file upload is complete
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-
-    try {
-      const user = await User.findById(req.params.id).populate('myLists').populate('groups');
-      if (!user) {
-        return res.status(404).send('User not found');
-      }
-
-      user.profilePicture = publicUrl;
-
-      await user.save();
-
-      res.status(200).send(user);
-    } catch (error) {
-      console.error('Error updating profile picture', error);
-      res.status(500).send('Internal server error');
-    }
-  });
-
-  blobStream.end(req.file.buffer);
-});
 
 /**
  * @swagger

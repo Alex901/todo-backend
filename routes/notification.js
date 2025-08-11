@@ -328,4 +328,46 @@ router.post('/request-to-join-group', authenticate, async (req, res) => {
     }
 });
 
+router.post('/contact-request', authenticate, async (req, res) => {
+    const { from, to } = req.body;
+
+    // Validate required fields
+    if (!from || !to) {
+        return res.status(400).send({ message: 'Missing required fields: from and to' });
+    }
+
+    try {
+        // Check if the "from" user exists
+        const fromUser = await User.findById(from);
+        if (!fromUser) {
+            return res.status(404).send({ message: 'Sender user not found' });
+        }
+
+        // Check if the "to" user exists
+        const toUser = await User.findById(to);
+        if (!toUser) {
+            return res.status(404).send({ message: 'Recipient user not found' });
+        }
+
+        // Create a new notification
+        const notification = new Notification({
+            from: fromUser._id,
+            to: toUser._id, // Array of recipients
+            type: 'contact',
+            message: `${fromUser.username} wants to make contact.`,
+        });
+
+        fromUser.contactRequests.push(toUser._id);
+        await fromUser.save();
+
+        // Save the notification
+        await notification.save();
+
+        res.status(200).send({ message: 'Contact request sent successfully', notification });
+    } catch (error) {
+        console.error('Error creating contact request notification:', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
 module.exports = router;

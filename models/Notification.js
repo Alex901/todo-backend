@@ -22,7 +22,7 @@ const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['friend', 'group', 'request-to-join-group', 'message', 'feedback', 'award','info','other']
+        enum: ['contact', 'group', 'request-to-join-group', 'message', 'feedback', 'award','info','other']
     },
     subType: {
         type: String,

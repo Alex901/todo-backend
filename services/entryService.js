@@ -62,28 +62,14 @@ async function updateTaskLinks(taskId, updatedTask) {
     if (!existingTask) {
         throw new Error('Task not found');
     }
-    console.log("Updated task in updateTaskLinks", updatedTask)
-    console.log("Existing task in updateTaskLinks", existingTask)
-
-    console.log('Existing Task tasksBefore:', existingTask.tasksBefore);
-    console.log('Existing Task tasksAfter:', existingTask.tasksAfter);
-    console.log("-----------------------------------")
-    console.log('Updated Task tasksBefore:', updatedTask.tasksBefore);
-    console.log('Updated Task tasksAfter:', updatedTask.tasksAfter);
 
     // Find new and removed tasksBefore
     const newTasksBefore = updatedTask.tasksBefore.filter(id => !existingTask.tasksBefore.includes(id));
     const removedTasksBefore = existingTask.tasksBefore.filter(id => !updatedTask.tasksBefore.includes(id));
 
-    console.log('New Tasks Before:', newTasksBefore);
-    console.log('Removed Tasks Before:', removedTasksBefore);
-
     // Find new and removed tasksAfter
     const newTasksAfter = updatedTask.tasksAfter.filter(id => !existingTask.tasksAfter.includes(id));
     const removedTasksAfter = existingTask.tasksAfter.filter(id => !updatedTask.tasksAfter.includes(id));
-
-    console.log('New Tasks After:', newTasksAfter);
-    console.log('Removed Tasks After:', removedTasksAfter);
 
     // Unlink removed tasks
     await unlinkTasksFromTask(taskId, removedTasksBefore, removedTasksAfter);

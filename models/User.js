@@ -67,36 +67,18 @@ const userSchema = new mongoose.Schema(
       enum: ['en', 'sv '] // English, Swedish
     },
 
-    contacts: { //This is dumb, use references instead
-      type: [
-        {
-          contact_id: {
-            type: String,
-            required: true,
-          },
-          username: {
-            type: String,
-            required: true,
-          },
-          email: {
-            type: String,
-            required: true,
-          },
-          role: {
-            type: String,
-            default: 'user',
-            enum: ['user', 'donator', 'admin']
-          },
-          profilePicture: {
-            type: String,
-            default: '',
-          },
-          contactList: {
-            type: [String],
-            default: [],
-          },
-        }
-      ],
+    contacts: { 
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }],
+      default: [],
+    },
+    contactRequests: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }],
       default: [],
     },
     myLists: {
@@ -199,7 +181,7 @@ const userSchema = new mongoose.Schema(
       activeView: {
         type: String,
         default: 'list', // Change to dashboard when dashboard is implemented
-        enum: ['list','dashboard','social'],
+        enum: ['list', 'dashboard', 'social'],
       },
     },
     activationToken: {
