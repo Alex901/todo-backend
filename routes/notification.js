@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose'); // Import mongoose
 const { authenticate } = require('../middlewares/auth');
 const Group = require('../models/Group');
 const User = require('../models/User');
@@ -328,6 +329,7 @@ router.post('/request-to-join-group', authenticate, async (req, res) => {
     }
 });
 
+//TODO: Docx
 router.post('/contact-request', authenticate, async (req, res) => {
     const { from, to } = req.body;
 
@@ -369,5 +371,73 @@ router.post('/contact-request', authenticate, async (req, res) => {
         res.status(500).send({ message: 'Internal server error' });
     }
 });
+
+router.post('/decline-contact-request', authenticate, async (req, res) => {
+    const { notificationData } = req.body;
+
+    if (!notificationData || !notificationData._id || !notificationData.from || !notificationData.to) {
+        return res.status(400).send({ message: 'Invalid notification data.' });
+    }
+
+    const session = await mongoose.startSession(); // Start a transaction session
+    session.startTransaction();
+
+    try {
+        const { _id: notificationId, from: fromUserId, to: toUserId } = notificationData;
+
+        // Step 1: Delete the notification
+        const notification = await Notification.findById(notificationId).session(session);
+        if (!notification) {
+            throw new Error('Notification not found');
+        }
+        await Notification.findByIdAndDelete(notificationId).session(session);
+
+        // Step 2: Remove `toUserId` from `fromUserId`'s contactRequests
+        const fromUser = await User.findById(fromUserId).session(session);
+        if (!fromUser) {
+            throw new Error('Sender user not found');
+        }
+
+        const toUser = await User.findById(toUserId).session(session);
+        if (!toUser) {
+            throw new Error('Recipient user not found');
+        }
+
+        // Ensure data types match
+        const index = fromUser.contactRequests.findIndex(
+            (id) => id.toString() === toUserId.toString()
+        );
+
+        if (index > -1) {
+            fromUser.contactRequests.splice(index, 1);
+        } else {
+            throw new Error('Recipient user not found in sender\'s contactRequests');
+        }
+        await fromUser.save({ session });
+
+        // Step 3: Notify `fromUserId` with a new notification
+        const sadEmoji = '😢';
+        const infoNotification = new Notification({
+            to: [fromUserId],
+            type: 'info',
+            message: `${toUser.username} does not wish to be your friend ${sadEmoji}`,
+        });
+        await infoNotification.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).send({ message: 'Contact request processed successfully' });
+    } catch (error) {
+        // Rollback the transaction in case of an error
+        await session.abortTransaction();
+        session.endSession();
+
+        console.error('Error processing contact request:', error);
+        res.status(500).send({ message: 'Internal server error', error: error.message });
+    }
+});
+
 
 module.exports = router;

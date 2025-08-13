@@ -18,13 +18,25 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const swaggerSetup = require('./swagger');
 const scheduler = require('./utils/scheduler');
+const rateLimeit = require('express-rate-limit')
 const { initializeGlobalSettings } = require('./models/GlobalSettings');
 
-
+const limiter = rateLimeit({
+    windowMs: 5 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    skip: (req, res) => {
+        const ip = req.ip || req.connection.remoteAddress;
+        return ip === '127.0.0.1' || ip === '::1'; // Skip rate limiting for localhost
+    },
+});
 
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'access.log'), { flags: 'a' });
 
 const app = express();
+app.use(limiter); // Apply the rate limiting middleware to all requests
 swaggerSetup(app);
 const PORT = process.env.PORT || 5000;
 const allowOrigins = [
@@ -37,8 +49,9 @@ const allowOrigins = [
     'https://api.habitforge.se',
     'https://accounts.google.com' // Allow Google OAuth origin
 ]
-const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
-const errorLogPath = path.join(__dirname, 'logs', 'error.log');
+
+
+
 const corsOptions = {
     origin: function (origin, callback) {
         // console.log('[DEBUG] Incoming origin:', origin); // Log the origin
@@ -52,6 +65,10 @@ const corsOptions = {
     allowedHeaders: ['User', 'Content-Type', 'Authorization'],
     credentials: true
 };
+
+//Not in use
+const consoleLogPath = path.join(__dirname, 'logs', 'console.log');
+const errorLogPath = path.join(__dirname, 'logs', 'error.log');
 
 app.use(cors(corsOptions));
 
