@@ -372,6 +372,7 @@ router.post('/contact-request', authenticate, async (req, res) => {
     }
 });
 
+//Todo: docx
 router.post('/decline-contact-request', authenticate, async (req, res) => {
     const { notificationData } = req.body;
 
@@ -429,6 +430,83 @@ router.post('/decline-contact-request', authenticate, async (req, res) => {
         session.endSession();
 
         res.status(200).send({ message: 'Contact request processed successfully' });
+    } catch (error) {
+        // Rollback the transaction in case of an error
+        await session.abortTransaction();
+        session.endSession();
+
+        console.error('Error processing contact request:', error);
+        res.status(500).send({ message: 'Internal server error', error: error.message });
+    }
+});
+
+//Todo: docx
+router.post('/accept-contact-request', authenticate, async (req, res) => {
+    const { notificationId, from, to } = req.body;
+
+    if (!notificationId || !from || !to) {
+        return res.status(400).send({ message: 'Invalid notification data. Please provide all required fields.' });
+    }
+
+    const session = await mongoose.startSession(); // Start a transaction session
+    session.startTransaction();
+
+    try {
+        // Step 1: Delete the notification
+        const notification = await Notification.findById(notificationId).session(session);
+        if (!notification) {
+            throw new Error('Notification not found');
+        }
+        await Notification.findByIdAndDelete(notificationId).session(session);
+
+        // Step 2: Find both users
+        const fromUser = await User.findById(from).session(session);
+        if (!fromUser) {
+            throw new Error('Sender user not found');
+        }
+
+        const toUser = await User.findById(to).session(session);
+        if (!toUser) {
+            throw new Error('Recipient user not found');
+        }
+
+        // Step 3: Add each other to contacts
+        if (!fromUser.contacts.includes(to)) {
+            fromUser.contacts.push(to);
+        }
+        if (!toUser.contacts.includes(from)) {
+            toUser.contacts.push(from);
+        }
+
+        await fromUser.save({ session });
+        await toUser.save({ session });
+
+        // Step 4: Remove `to` from `from`'s contactRequests
+        const index = fromUser.contactRequests.findIndex(
+            (id) => id.toString() === to.toString()
+        );
+        if (index > -1) {
+            fromUser.contactRequests.splice(index, 1);
+        } else {
+            throw new Error('Recipient user not found in sender\'s contactRequests');
+        }
+        await fromUser.save({ session });
+
+        // Step 5: Notify `from` that `to` accepted the contact request
+        const happyEmoji = '😊';
+        const infoNotification = new Notification({
+            from: to,
+            to: [from],
+            type: 'info',
+            message: `${toUser.username} has accepted your contact request! You can now communicate ${happyEmoji}`,
+        });
+        await infoNotification.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).send({ message: 'Contact request accepted successfully' });
     } catch (error) {
         // Rollback the transaction in case of an error
         await session.abortTransaction();

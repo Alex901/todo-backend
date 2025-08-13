@@ -243,6 +243,10 @@ router.get('/checkLogin', async (req, res) => {
                         path: 'members.member_id',
                         model: 'User'
                     }
+                })
+                .populate({
+                    path: 'contacts',
+                    model: 'User'
                 });
             if (!user) {
                 return res.json({ valid: false });
