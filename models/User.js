@@ -67,7 +67,7 @@ const userSchema = new mongoose.Schema(
       enum: ['en', 'sv '] // English, Swedish
     },
 
-    contacts: { 
+    contacts: {
       type: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -80,6 +80,13 @@ const userSchema = new mongoose.Schema(
         ref: 'User'
       }],
       default: [],
+    },
+    chats: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Chat'
+      }],
+      default: []
     },
     myLists: {
       type: [{
@@ -182,6 +189,29 @@ const userSchema = new mongoose.Schema(
         type: String,
         default: 'list', // Change to dashboard when dashboard is implemented
         enum: ['list', 'dashboard', 'social'],
+      },
+      isOnline: {
+        type: Boolean,
+        default: false,
+        required: true,
+      },
+      chatPosition: {
+        type: {
+          x: {
+            type: Number,
+            required: true,
+            default: 0, 
+          },
+          y: {
+            type: Number,
+            required: true,
+            default: 0, 
+          },
+        },
+        default: {
+          x: 0,
+          y: 0,
+        },
       },
     },
     activationToken: {
