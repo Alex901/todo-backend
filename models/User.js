@@ -81,13 +81,16 @@ const userSchema = new mongoose.Schema(
       }],
       default: [],
     },
-    chats: {
-      type: [{
+    chats: [{
+      chat: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Chat'
-      }],
-      default: []
-    },
+        ref: 'Chat', 
+      },
+      isOpen: {
+        type: Boolean,
+        default: false, 
+      },
+    }],
     myLists: {
       type: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -195,22 +198,22 @@ const userSchema = new mongoose.Schema(
         default: false,
         required: true,
       },
-      chatPosition: {
+      chatWidgetPosition: {
         type: {
           x: {
             type: Number,
             required: true,
-            default: 0, 
+            default: 50,
           },
           y: {
             type: Number,
             required: true,
-            default: 0, 
+            default: 50,
           },
         },
         default: {
-          x: 0,
-          y: 0,
+          x: 50,
+          y: 50,
         },
       },
     },

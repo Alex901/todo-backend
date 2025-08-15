@@ -20,6 +20,7 @@ const swaggerSetup = require('./swagger');
 const scheduler = require('./utils/scheduler');
 const rateLimeit = require('express-rate-limit')
 const { initializeGlobalSettings } = require('./models/GlobalSettings');
+const chatRoutes = require('./routes/chat');
 
 const limiter = rateLimeit({
     windowMs: 5 * 60 * 1000, // 15 minutes
@@ -97,8 +98,6 @@ app.get('/', (req, res) => {
     res.send("server is running");
 });
 
-
-
 app.use('/api', entriesRoutes);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
@@ -106,6 +105,7 @@ app.use('/groups', groupRoutes)
 app.use('/notifications', notificationRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/settings', settingsRountes);
+app.use('/chat', chatRoutes);
 
 app.use((req, res, next) => {
     // console.log(`${req.method} ${req.url}`, req.body);

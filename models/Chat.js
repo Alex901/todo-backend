@@ -23,6 +23,16 @@ const chatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Message', // Reference to Message model
     }],
+    lastRead: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User', // Reference to User model
+        },
+        timestamp: {
+            type: Date,
+            default: Date.now, // Default to the current time
+        },
+    }],
     isOpen: {
         type: Boolean,
         default: false, // Default to false

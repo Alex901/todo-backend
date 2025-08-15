@@ -213,10 +213,10 @@ router.post('/create', async (req, res) => {
       if (user.verified === false || user.verified === undefined) {
         // console.log('Activation link: ', activationLink);
         await sendMail(
-    user.email,
-    'Welcome to Habitforge! Activate your account',
-    `Welcome to Habitforge! <br><br> We're thrilled to have you join our community. <br><br> Here comes your link to activate your account: <br> ${activationHtmlLink} <br><br> We hope you'll enjoy your stay and achieve great things with us!`
-);
+          user.email,
+          'Welcome to Habitforge! Activate your account',
+          `Welcome to Habitforge! <br><br> We're thrilled to have you join our community. <br><br> Here comes your link to activate your account: <br> ${activationHtmlLink} <br><br> We hope you'll enjoy your stay and achieve great things with us!`
+        );
       }
     }
 
@@ -1468,6 +1468,7 @@ router.patch('/toggledetails/:id', async (req, res) => {
  *               type: string
  *               example: "Internal server error"
  */
+//Bad name, should be update-user-settings
 router.patch('/update-todo-settings/:id', ensureLatestRequest, validateLatestRequest, async (req, res) => {
   try {
     const userId = req.params.id;
@@ -1744,6 +1745,33 @@ router.patch('/revive-project/:userId', async (req, res) => {
     return res.status(200).json({ message: 'Project revived successfully', project });
   } catch (error) {
     console.error('Error reviving project', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.patch('/update-chat-widget-position/:id', ensureLatestRequest, validateLatestRequest, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { chatWidgetPosition } = req.body;
+    console.log("DEBUG: CWP:", chatWidgetPosition);
+
+    if (!chatWidgetPosition || typeof chatWidgetPosition.x !== 'number' || typeof chatWidgetPosition.y !== 'number') {
+      return res.status(400).json({ message: 'Invalid chatWidgetPosition data. Both x and y must be numbers.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update the chatWidgetPosition
+    user.settings.chatWidgetPosition = chatWidgetPosition;
+
+    await user.save();
+
+    res.status(200).json({ message: 'Chat widget position updated successfully', chatWidgetPosition: user.settings.chatWidgetPosition });
+  } catch (error) {
+    console.error('Error updating chat widget position:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
